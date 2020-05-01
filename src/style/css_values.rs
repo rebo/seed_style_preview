@@ -1,5 +1,6 @@
 use super::measures::*;
 use crate::style::theme::with_themes;
+use crate::style::CssValueTrait;
 use crate::style::Rule;
 use crate::style::Style;
 use crate::style::UpdateStyle;
@@ -281,7 +282,7 @@ impl CssMedia {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bg_attachment"]
-#[display(fmt = "background-attachment: {}")]
+#[display(fmt = "background-attachment: {};")]
 pub enum CssBackgroundAttachment {
     #[display(fmt = "scroll")]
     Scroll,
@@ -293,8 +294,13 @@ pub enum CssBackgroundAttachment {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+pub enum CssRaw {
+    StringValue(String),
+}
+
+#[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bg_image"]
-#[display(fmt = "background-image: {}")]
+#[display(fmt = "background-image: {};")]
 pub enum CssBackgroundImage {
     Uri(String),
     #[display(fmt = "none")]
@@ -306,7 +312,7 @@ pub enum CssBackgroundImage {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bg_position"]
-#[display(fmt = "background-position: {}")]
+#[display(fmt = "background-position: {};")]
 pub enum CssBackgroundPosition {
     PercentX(Percent),
     PosX(ExactLength),
@@ -337,7 +343,7 @@ pub enum CssBackgroundPosition {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bg_repeat"]
-#[display(fmt = "background-repeat: {}")]
+#[display(fmt = "background-repeat: {};")]
 pub enum CssBackgroundRepeat {
     #[display(fmt = "repeat")]
     Repeat,
@@ -353,7 +359,7 @@ pub enum CssBackgroundRepeat {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "border-collapse: {}")]
+#[display(fmt = "border-collapse: {};")]
 pub enum CssBorderCollapse {
     #[display(fmt = "collapse")]
     Collapse,
@@ -365,7 +371,7 @@ pub enum CssBorderCollapse {
 }
 
 #[derive(Display, Clone, Debug)]
-#[display(fmt = "border-spacing: {}")]
+#[display(fmt = "border-spacing: {};")]
 pub enum CssBorderSpacing {
     #[display(fmt = "length-x")]
     LengthX,
@@ -376,7 +382,7 @@ pub enum CssBorderSpacing {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "capition-side: {}")]
+#[display(fmt = "capition-side: {};")]
 pub enum CssCaptionSide {
     #[display(fmt = "top")]
     Top,
@@ -388,7 +394,7 @@ pub enum CssCaptionSide {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "clear: {}")]
+#[display(fmt = "clear: {};")]
 pub enum CssClear {
     #[display(fmt = "none")]
     None,
@@ -404,7 +410,7 @@ pub enum CssClear {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "clip: {}")]
+#[display(fmt = "clip: {};")]
 pub enum CssClip {
     Shape(String),
     #[display(fmt = "auto")]
@@ -415,7 +421,7 @@ pub enum CssClip {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "content: {}")]
+#[display(fmt = "content: {};")]
 pub enum CssContent {
     #[display(fmt = "normal")]
     Normal,
@@ -435,7 +441,7 @@ pub enum CssContent {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "counter-increment: {}")]
+#[display(fmt = "counter-increment: {};")]
 pub enum CssCounterIncrement {
     Identifier(String),
     Integer(i32),
@@ -447,7 +453,7 @@ pub enum CssCounterIncrement {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "cursor: {}")]
+#[display(fmt = "cursor: {};")]
 pub enum CssCursor {
     Uri(String),
     #[display(fmt = "auto")]
@@ -490,7 +496,7 @@ pub enum CssCursor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "direction: {}")]
+#[display(fmt = "direction: {};")]
 pub enum CssDirection {
     #[display(fmt = "ltr")]
     Ltr,
@@ -502,7 +508,7 @@ pub enum CssDirection {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "empty-cells: {}")]
+#[display(fmt = "empty-cells: {};")]
 pub enum CssEmptyCells {
     #[display(fmt = "show")]
     Show,
@@ -514,7 +520,7 @@ pub enum CssEmptyCells {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "float: {}")]
+#[display(fmt = "float: {};")]
 pub enum CssFloat {
     #[display(fmt = "left")]
     Left,
@@ -528,7 +534,7 @@ pub enum CssFloat {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "font-style: {}")]
+#[display(fmt = "font-style: {};")]
 pub enum CssFontStyle {
     #[display(fmt = "normal")]
     Normal,
@@ -542,7 +548,7 @@ pub enum CssFontStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "font-variant: {}")]
+#[display(fmt = "font-variant: {};")]
 pub enum CssFontVariant {
     #[display(fmt = "normal")]
     Normal,
@@ -554,7 +560,7 @@ pub enum CssFontVariant {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "font-weight: {}")]
+#[display(fmt = "font-weight: {};")]
 pub enum CssFontWeight {
     #[display(fmt = "normal")]
     Normal,
@@ -587,7 +593,7 @@ pub enum CssFontWeight {
     StringValue(String),
 }
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "list-style-image: {}")]
+#[display(fmt = "list-style-image: {};")]
 pub enum CssListStyleImage {
     Url(String),
     #[display(fmt = "none")]
@@ -597,7 +603,7 @@ pub enum CssListStyleImage {
     StringValue(String),
 }
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "list-style-position: {}")]
+#[display(fmt = "list-style-position: {};")]
 pub enum CssListStylePosition {
     #[display(fmt = "inside")]
     Inside,
@@ -609,7 +615,7 @@ pub enum CssListStylePosition {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "list-style-type: {}")]
+#[display(fmt = "list-style-type: {};")]
 pub enum CssListStyleType {
     #[display(fmt = "disc")]
     Disc,
@@ -645,7 +651,7 @@ pub enum CssListStyleType {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "list-style: {}")]
+#[display(fmt = "list-style: {};")]
 pub enum CssListStyle {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     ListStyle(CssListStyleType, CssListStylePosition, CssListStyleImage),
@@ -655,7 +661,7 @@ pub enum CssListStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "orphans: {}")]
+#[display(fmt = "orphans: {};")]
 pub enum CssOrphans {
     Integer(i32),
     #[display(fmt = "inherit")]
@@ -664,7 +670,7 @@ pub enum CssOrphans {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "overflow: {}")]
+#[display(fmt = "overflow: {};")]
 pub enum CssOverflow {
     #[display(fmt = "visible")]
     Visible,
@@ -680,7 +686,7 @@ pub enum CssOverflow {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "page-break: {}")]
+#[display(fmt = "page-break: {};")]
 pub enum CssPageBreak {
     #[display(fmt = "auto")]
     Auto,
@@ -699,7 +705,7 @@ pub enum CssPageBreak {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "pos"]
-#[display(fmt = "position: {}")]
+#[display(fmt = "position: {};")]
 pub enum CssPosition {
     #[display(fmt = "static")]
     Static,
@@ -715,7 +721,7 @@ pub enum CssPosition {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "quotes: {}")]
+#[display(fmt = "quotes: {};")]
 pub enum CssQuotes {
     #[display(fmt = "{} {}", _0, _1)]
     Quotes(String, String),
@@ -727,7 +733,7 @@ pub enum CssQuotes {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "table-layout: {}")]
+#[display(fmt = "table-layout: {};")]
 pub enum CssTableLayout {
     #[display(fmt = "auto")]
     Auto,
@@ -739,7 +745,7 @@ pub enum CssTableLayout {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "text-align: {}")]
+#[display(fmt = "text-align: {};")]
 pub enum CssTextAlign {
     #[display(fmt = "left")]
     Left,
@@ -755,7 +761,7 @@ pub enum CssTextAlign {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "text-decoration: {}")]
+#[display(fmt = "text-decoration: {};")]
 pub enum CssTextDecoration {
     #[display(fmt = "none")]
     None,
@@ -773,7 +779,7 @@ pub enum CssTextDecoration {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "text-indent: {}")]
+#[display(fmt = "text-indent: {};")]
 pub enum CssTextIndent {
     Length(ExactLength),
     Percentage(Percent),
@@ -783,7 +789,7 @@ pub enum CssTextIndent {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "text-transform: {}")]
+#[display(fmt = "text-transform: {};")]
 pub enum CssTextTransform {
     #[display(fmt = "capitalize")]
     Capitalize,
@@ -799,7 +805,7 @@ pub enum CssTextTransform {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "unicode-bidi: {}")]
+#[display(fmt = "unicode-bidi: {};")]
 pub enum CssUnicodeBidi {
     #[display(fmt = "normal")]
     Normal,
@@ -813,7 +819,7 @@ pub enum CssUnicodeBidi {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "vertical-align: {}")]
+#[display(fmt = "vertical-align: {};")]
 pub enum CssVerticalAlign {
     #[display(fmt = "baseline")]
     Baseline,
@@ -837,7 +843,7 @@ pub enum CssVerticalAlign {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "visibility: {}")]
+#[display(fmt = "visibility: {};")]
 pub enum CssVisibility {
     #[display(fmt = "visible")]
     Visible,
@@ -851,7 +857,7 @@ pub enum CssVisibility {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "white-space: {}")]
+#[display(fmt = "white-space: {};")]
 pub enum CssWhiteSpace {
     #[display(fmt = "normal")]
     Normal,
@@ -869,7 +875,7 @@ pub enum CssWhiteSpace {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "widows: {}")]
+#[display(fmt = "widows: {};")]
 pub enum CssWidows {
     Integer(i32),
     #[display(fmt = "inherit")]
@@ -878,7 +884,7 @@ pub enum CssWidows {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "word-spacing: {}")]
+#[display(fmt = "word-spacing: {};")]
 pub enum CssWordSpacing {
     #[display(fmt = "normal")]
     Normal,
@@ -889,7 +895,7 @@ pub enum CssWordSpacing {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "z-index: {}")]
+#[display(fmt = "z-index: {};")]
 pub enum CssZIndex {
     #[display(fmt = "auto")]
     Auto,
@@ -901,7 +907,7 @@ pub enum CssZIndex {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "m"]
-#[display(fmt = "margin: {}")]
+#[display(fmt = "margin: {};")]
 pub enum CssMargin {
     Length(ExactLength),
     Percentage(Percent),
@@ -914,7 +920,7 @@ pub enum CssMargin {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "mt"]
-#[display(fmt = "margin-top: {}")]
+#[display(fmt = "margin-top: {};")]
 pub enum CssMarginTop {
     Length(ExactLength),
     Percentage(Percent),
@@ -927,7 +933,7 @@ pub enum CssMarginTop {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "mb"]
-#[display(fmt = "margin-bottom: {}")]
+#[display(fmt = "margin-bottom: {};")]
 pub enum CssMarginBottom {
     Length(ExactLength),
     Percentage(Percent),
@@ -939,7 +945,7 @@ pub enum CssMarginBottom {
 }
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "ml"]
-#[display(fmt = "margin-left: {}")]
+#[display(fmt = "margin-left: {};")]
 pub enum CssMarginLeft {
     Length(ExactLength),
     Percentage(Percent),
@@ -952,7 +958,7 @@ pub enum CssMarginLeft {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "mr"]
-#[display(fmt = "margin-right: {}")]
+#[display(fmt = "margin-right: {};")]
 pub enum CssMarginRight {
     Length(ExactLength),
     Percentage(Percent),
@@ -964,7 +970,7 @@ pub enum CssMarginRight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "generic-space: {}")]
+#[display(fmt = "generic-space: {};")]
 pub enum CssSpace {
     Length(ExactLength),
     Percentage(Percent),
@@ -976,7 +982,7 @@ pub enum CssSpace {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "top: {}")]
+#[display(fmt = "top: {};")]
 pub enum CssTop {
     Length(ExactLength),
     Percentage(Percent),
@@ -988,7 +994,7 @@ pub enum CssTop {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "bottom: {}")]
+#[display(fmt = "bottom: {};")]
 pub enum CssBottom {
     Length(ExactLength),
     Percentage(Percent),
@@ -1000,7 +1006,7 @@ pub enum CssBottom {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "left: {}")]
+#[display(fmt = "left: {};")]
 pub enum CssLeft {
     Length(ExactLength),
     Percentage(Percent),
@@ -1012,7 +1018,7 @@ pub enum CssLeft {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "right: {}")]
+#[display(fmt = "right: {};")]
 pub enum CssRight {
     Length(ExactLength),
     Percentage(Percent),
@@ -1024,7 +1030,7 @@ pub enum CssRight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "grid-gap: {}")]
+#[display(fmt = "grid-gap: {};")]
 pub enum CssGridGap {
     Length(ExactLength),
     Percentage(Percent),
@@ -1036,7 +1042,7 @@ pub enum CssGridGap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "grid-column-gap: {}")]
+#[display(fmt = "grid-column-gap: {};")]
 pub enum CssGridColumnGap {
     Length(ExactLength),
     Percentage(Percent),
@@ -1048,7 +1054,7 @@ pub enum CssGridColumnGap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "grid-row-gap: {}")]
+#[display(fmt = "grid-row-gap: {};")]
 pub enum CssGridRowGap {
     Length(ExactLength),
     Percentage(Percent),
@@ -1060,7 +1066,7 @@ pub enum CssGridRowGap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "gap: {}")]
+#[display(fmt = "gap: {};")]
 pub enum CssGap {
     Length(ExactLength),
     Percentage(Percent),
@@ -1072,7 +1078,7 @@ pub enum CssGap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "column-gap: {}")]
+#[display(fmt = "column-gap: {};")]
 pub enum CssColumnGap {
     Length(ExactLength),
     Percentage(Percent),
@@ -1084,7 +1090,7 @@ pub enum CssColumnGap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "row-gap: {}")]
+#[display(fmt = "row-gap: {};")]
 pub enum CssRowGap {
     Length(ExactLength),
     Percentage(Percent),
@@ -1097,7 +1103,7 @@ pub enum CssRowGap {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "p"]
-#[display(fmt = "padding: {}")]
+#[display(fmt = "padding: {};")]
 pub enum CssPadding {
     Length(ExactLength),
     Percentage(Percent),
@@ -1109,7 +1115,7 @@ pub enum CssPadding {
 }
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "pt"]
-#[display(fmt = "padding-top: {}")]
+#[display(fmt = "padding-top: {};")]
 pub enum CssPaddingTop {
     Length(ExactLength),
     Percentage(Percent),
@@ -1122,7 +1128,7 @@ pub enum CssPaddingTop {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "pr"]
-#[display(fmt = "padding-right: {}")]
+#[display(fmt = "padding-right: {};")]
 pub enum CssPaddingRight {
     Length(ExactLength),
     Percentage(Percent),
@@ -1134,7 +1140,7 @@ pub enum CssPaddingRight {
 }
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "pl"]
-#[display(fmt = "padding-left: {}")]
+#[display(fmt = "padding-left: {};")]
 pub enum CssPaddingLeft {
     Length(ExactLength),
     Percentage(Percent),
@@ -1147,7 +1153,7 @@ pub enum CssPaddingLeft {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "pb"]
-#[display(fmt = "padding-bottom: {}")]
+#[display(fmt = "padding-bottom: {};")]
 pub enum CssPaddingBottom {
     Length(ExactLength),
     Percentage(Percent),
@@ -1160,7 +1166,7 @@ pub enum CssPaddingBottom {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "b_style"]
-#[display(fmt = "border-style: {}")]
+#[display(fmt = "border-style: {};")]
 pub enum CssBorderStyle {
     #[display(fmt = "none")]
     None,
@@ -1191,7 +1197,7 @@ pub enum CssBorderStyle {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bl_style"]
-#[display(fmt = "border-left-style: {}")]
+#[display(fmt = "border-left-style: {};")]
 pub enum CssBorderLeftStyle {
     #[display(fmt = "none")]
     None,
@@ -1222,7 +1228,7 @@ pub enum CssBorderLeftStyle {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "br_style"]
-#[display(fmt = "border-right-style: {}")]
+#[display(fmt = "border-right-style: {};")]
 pub enum CssBorderRightStyle {
     #[display(fmt = "none")]
     None,
@@ -1253,7 +1259,7 @@ pub enum CssBorderRightStyle {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bt_style"]
-#[display(fmt = "border-top-style: {}")]
+#[display(fmt = "border-top-style: {};")]
 pub enum CssBorderTopStyle {
     #[display(fmt = "none")]
     None,
@@ -1284,7 +1290,7 @@ pub enum CssBorderTopStyle {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bb_style"]
-#[display(fmt = "border-bottom-style: {}")]
+#[display(fmt = "border-bottom-style: {};")]
 pub enum CssBorderBottomStyle {
     #[display(fmt = "none")]
     None,
@@ -1314,7 +1320,7 @@ pub enum CssBorderBottomStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-style: {}")]
+#[display(fmt = "outline-style: {};")]
 pub enum CssOutlineStyle {
     #[display(fmt = "none")]
     None,
@@ -1344,7 +1350,7 @@ pub enum CssOutlineStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-left-style: {}")]
+#[display(fmt = "outline-left-style: {};")]
 pub enum CssOutlineLeftStyle {
     #[display(fmt = "none")]
     None,
@@ -1374,7 +1380,7 @@ pub enum CssOutlineLeftStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-right-style: {}")]
+#[display(fmt = "outline-right-style: {};")]
 pub enum CssOutlineRightStyle {
     #[display(fmt = "none")]
     None,
@@ -1404,7 +1410,7 @@ pub enum CssOutlineRightStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-top-style: {}")]
+#[display(fmt = "outline-top-style: {};")]
 pub enum CssOutlineTopStyle {
     #[display(fmt = "none")]
     None,
@@ -1434,7 +1440,7 @@ pub enum CssOutlineTopStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-bottom-style: {}")]
+#[display(fmt = "outline-bottom-style: {};")]
 pub enum CssOutlineBottomStyle {
     #[display(fmt = "none")]
     None,
@@ -1465,7 +1471,7 @@ pub enum CssOutlineBottomStyle {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "b_width"]
-#[display(fmt = "border-width: {}")]
+#[display(fmt = "border-width: {};")]
 pub enum CssBorderWidth {
     #[display(fmt = "medium")]
     Medium,
@@ -1483,7 +1489,7 @@ pub enum CssBorderWidth {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bl_width"]
-#[display(fmt = "border-left-width: {}")]
+#[display(fmt = "border-left-width: {};")]
 pub enum CssBorderLeftWidth {
     #[display(fmt = "medium")]
     Medium,
@@ -1501,7 +1507,7 @@ pub enum CssBorderLeftWidth {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "br_width"]
-#[display(fmt = "border-right-width: {}")]
+#[display(fmt = "border-right-width: {};")]
 pub enum CssBorderRightWidth {
     #[display(fmt = "medium")]
     Medium,
@@ -1519,7 +1525,7 @@ pub enum CssBorderRightWidth {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bt_width"]
-#[display(fmt = "border-top-width: {}")]
+#[display(fmt = "border-top-width: {};")]
 pub enum CssBorderTopWidth {
     #[display(fmt = "medium")]
     Medium,
@@ -1537,7 +1543,7 @@ pub enum CssBorderTopWidth {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bb_width"]
-#[display(fmt = "border-bottom-width: {}")]
+#[display(fmt = "border-bottom-width: {};")]
 pub enum CssBorderBottomWidth {
     #[display(fmt = "medium")]
     Medium,
@@ -1554,7 +1560,7 @@ pub enum CssBorderBottomWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-width: {}")]
+#[display(fmt = "outline-width: {};")]
 pub enum CssOutlineWidth {
     #[display(fmt = "medium")]
     Medium,
@@ -1571,7 +1577,7 @@ pub enum CssOutlineWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-left-width: {}")]
+#[display(fmt = "outline-left-width: {};")]
 pub enum CssOutlineLeftWidth {
     #[display(fmt = "medium")]
     Medium,
@@ -1588,7 +1594,7 @@ pub enum CssOutlineLeftWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-right-width: {}")]
+#[display(fmt = "outline-right-width: {};")]
 pub enum CssOutlineRightWidth {
     #[display(fmt = "medium")]
     Medium,
@@ -1605,7 +1611,7 @@ pub enum CssOutlineRightWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-top-width: {}")]
+#[display(fmt = "outline-top-width: {};")]
 pub enum CssOutlineTopWidth {
     #[display(fmt = "medium")]
     Medium,
@@ -1622,7 +1628,7 @@ pub enum CssOutlineTopWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-bottom-width: {}")]
+#[display(fmt = "outline-bottom-width: {};")]
 pub enum CssOutlineBottomWidth {
     #[display(fmt = "medium")]
     Medium,
@@ -1639,7 +1645,7 @@ pub enum CssOutlineBottomWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "generic-size: {}")]
+#[display(fmt = "generic-size: {};")]
 pub enum CssSize {
     #[display(fmt = "auto")]
     Auto,
@@ -1653,7 +1659,7 @@ pub enum CssSize {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "flex-basis: {}")]
+#[display(fmt = "flex-basis: {};")]
 pub enum CssFlexBasis {
     #[display(fmt = "auto")]
     Auto,
@@ -1668,7 +1674,7 @@ pub enum CssFlexBasis {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "w"]
-#[display(fmt = "width: {}")]
+#[display(fmt = "width: {};")]
 pub enum CssWidth {
     #[display(fmt = "auto")]
     Auto,
@@ -1683,7 +1689,7 @@ pub enum CssWidth {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "h"]
-#[display(fmt = "height: {}")]
+#[display(fmt = "height: {};")]
 pub enum CssHeight {
     #[display(fmt = "auto")]
     Auto,
@@ -1698,7 +1704,7 @@ pub enum CssHeight {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "min_w"]
-#[display(fmt = "min-width: {}")]
+#[display(fmt = "min-width: {};")]
 pub enum CssMinWidth {
     #[display(fmt = "auto")]
     Auto,
@@ -1713,7 +1719,7 @@ pub enum CssMinWidth {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "max_w"]
-#[display(fmt = "max-width: {}")]
+#[display(fmt = "max-width: {};")]
 pub enum CssMaxWidth {
     #[display(fmt = "auto")]
     Auto,
@@ -1728,7 +1734,7 @@ pub enum CssMaxWidth {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "min_h"]
-#[display(fmt = "min-height: {}")]
+#[display(fmt = "min-height: {};")]
 pub enum CssMinHeight {
     #[display(fmt = "auto")]
     Auto,
@@ -1743,7 +1749,7 @@ pub enum CssMinHeight {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "max_h"]
-#[display(fmt = "max-height: {}")]
+#[display(fmt = "max-height: {};")]
 pub enum CssMaxHeight {
     #[display(fmt = "auto")]
     Auto,
@@ -1757,7 +1763,7 @@ pub enum CssMaxHeight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "border: {}")]
+#[display(fmt = "border: {};")]
 pub enum CssBorder {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Border(CssBorderWidth, CssBorderStyle, CssColor),
@@ -1767,7 +1773,7 @@ pub enum CssBorder {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "border-left: {}")]
+#[display(fmt = "border-left: {};")]
 pub enum CssBorderLeft {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Border(CssBorderWidth, CssBorderStyle, CssColor),
@@ -1777,7 +1783,7 @@ pub enum CssBorderLeft {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "border-right: {}")]
+#[display(fmt = "border-right: {};")]
 pub enum CssBorderRight {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Border(CssBorderWidth, CssBorderStyle, CssColor),
@@ -1787,7 +1793,7 @@ pub enum CssBorderRight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "border-top: {}")]
+#[display(fmt = "border-top: {};")]
 pub enum CssBorderTop {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Border(CssBorderWidth, CssBorderStyle, CssColor),
@@ -1797,7 +1803,7 @@ pub enum CssBorderTop {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "border-bottom: {}")]
+#[display(fmt = "border-bottom: {};")]
 pub enum CssBorderBottom {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Border(CssBorderWidth, CssBorderStyle, CssColor),
@@ -1807,7 +1813,7 @@ pub enum CssBorderBottom {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline: {}")]
+#[display(fmt = "outline: {};")]
 pub enum CssOutline {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Outline(CssOutlineWidth, CssOutlineStyle, CssColor),
@@ -1819,7 +1825,7 @@ pub enum CssOutline {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-left: {}")]
+#[display(fmt = "outline-left: {};")]
 pub enum CssOutlineLeft {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Outline(CssOutlineWidth, CssOutlineStyle, CssColor),
@@ -1831,7 +1837,7 @@ pub enum CssOutlineLeft {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-right: {}")]
+#[display(fmt = "outline-right: {};")]
 pub enum CssOutlineRight {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Outline(CssOutlineWidth, CssOutlineStyle, CssColor),
@@ -1843,7 +1849,7 @@ pub enum CssOutlineRight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-top: {}")]
+#[display(fmt = "outline-top: {};")]
 pub enum CssOutlineTop {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Outline(CssOutlineWidth, CssOutlineStyle, CssColor),
@@ -1855,7 +1861,7 @@ pub enum CssOutlineTop {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-bottom: {}")]
+#[display(fmt = "outline-bottom: {};")]
 pub enum CssOutlineBottom {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Outline(CssOutlineWidth, CssOutlineStyle, CssColor),
@@ -1867,7 +1873,7 @@ pub enum CssOutlineBottom {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "transition: {}")]
+#[display(fmt = "transition: {};")]
 pub enum CssTransition {
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -1875,7 +1881,7 @@ pub enum CssTransition {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "letter-spacing: {}")]
+#[display(fmt = "letter-spacing: {};")]
 pub enum CssLetterSpacing {
     Normal,
     Length(ExactLength),
@@ -1885,7 +1891,7 @@ pub enum CssLetterSpacing {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "line-height: {}")]
+#[display(fmt = "line-height: {};")]
 pub enum CssLineHeight {
     Normal,
     Number(u32),
@@ -1898,7 +1904,7 @@ pub enum CssLineHeight {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "radius"]
-#[display(fmt = "border-radius: {}")]
+#[display(fmt = "border-radius: {};")]
 pub enum CssBorderRadius {
     Length(ExactLength),
     Percentage(Percent),
@@ -1909,7 +1915,7 @@ pub enum CssBorderRadius {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "border-top-right-radius: {}")]
+#[display(fmt = "border-top-right-radius: {};")]
 pub enum CssBorderTopRightRadius {
     Length(ExactLength),
     Percentage(Percent),
@@ -1920,7 +1926,7 @@ pub enum CssBorderTopRightRadius {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "border--top-left-radius: {}")]
+#[display(fmt = "border--top-left-radius: {};")]
 pub enum CssBorderTopLeftRadius {
     Length(ExactLength),
     Percentage(Percent),
@@ -1931,7 +1937,7 @@ pub enum CssBorderTopLeftRadius {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "border-bottom-right-radius: {}")]
+#[display(fmt = "border-bottom-right-radius: {};")]
 pub enum CssBorderBottomRightRadius {
     Length(ExactLength),
     Percentage(Percent),
@@ -1942,7 +1948,7 @@ pub enum CssBorderBottomRightRadius {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "border-bottom-left-radius: {}")]
+#[display(fmt = "border-bottom-left-radius: {};")]
 pub enum CssBorderBottomLeftRadius {
     Length(ExactLength),
     Percentage(Percent),
@@ -1953,7 +1959,7 @@ pub enum CssBorderBottomLeftRadius {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "font: {}")]
+#[display(fmt = "font: {};")]
 pub enum CssFont {
     #[display(fmt = "{} {} {} {}/{} {}", _0, _1, _2, _3, _4, _5)]
     Font(
@@ -1970,7 +1976,7 @@ pub enum CssFont {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "font-size: {}")]
+#[display(fmt = "font-size: {};")]
 pub enum CssFontSize {
     Size(ExactLength),
     Percentage(Percent),
@@ -1980,7 +1986,7 @@ pub enum CssFontSize {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "color: {}")]
+#[display(fmt = "color: {};")]
 pub enum CssColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -1994,7 +2000,7 @@ pub enum CssColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "stroke: {}")]
+#[display(fmt = "stroke: {};")]
 pub enum CssStroke {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2009,7 +2015,7 @@ pub enum CssStroke {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bg_color"]
-#[display(fmt = "background-color: {}")]
+#[display(fmt = "background-color: {};")]
 pub enum CssBackgroundColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2023,7 +2029,7 @@ pub enum CssBackgroundColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "fill: {}")]
+#[display(fmt = "fill: {};")]
 pub enum CssFill {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2038,7 +2044,7 @@ pub enum CssFill {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "b_color"]
-#[display(fmt = "border-color: {}")]
+#[display(fmt = "border-color: {};")]
 pub enum CssBorderColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2053,7 +2059,7 @@ pub enum CssBorderColor {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bl_color"]
-#[display(fmt = "border-left-color: {}")]
+#[display(fmt = "border-left-color: {};")]
 pub enum CssBorderLeftColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2068,7 +2074,7 @@ pub enum CssBorderLeftColor {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "br_color"]
-#[display(fmt = "border-right-color: {}")]
+#[display(fmt = "border-right-color: {};")]
 pub enum CssBorderRightColor {
     #[display(fmt = "{} {} {} {})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2082,7 +2088,7 @@ pub enum CssBorderRightColor {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bt_color"]
-#[display(fmt = "border-top-color: {}")]
+#[display(fmt = "border-top-color: {};")]
 pub enum CssBorderTopColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2097,7 +2103,7 @@ pub enum CssBorderTopColor {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bb_color"]
-#[display(fmt = "border-bottom-color: {}")]
+#[display(fmt = "border-bottom-color: {};")]
 pub enum CssBorderBottomColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2111,7 +2117,7 @@ pub enum CssBorderBottomColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-color: {}")]
+#[display(fmt = "outline-color: {};")]
 pub enum CssOutlineColor {
     #[display(fmt = "rgba({},{},{},{}", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2125,7 +2131,7 @@ pub enum CssOutlineColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-left-color: {}")]
+#[display(fmt = "outline-left-color: {};")]
 pub enum CssOutlineLeftColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2139,7 +2145,7 @@ pub enum CssOutlineLeftColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-right-color: {}")]
+#[display(fmt = "outline-right-color: {};")]
 pub enum CssOutlineRightColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2153,7 +2159,7 @@ pub enum CssOutlineRightColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-top-color: {}")]
+#[display(fmt = "outline-top-color: {};")]
 pub enum CssOutlineTopColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2167,7 +2173,7 @@ pub enum CssOutlineTopColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "outline-bottom-color: {}")]
+#[display(fmt = "outline-bottom-color: {};")]
 pub enum CssOutlineBottomColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
     Rgba(f64, f64, f64, f64),
@@ -2181,7 +2187,7 @@ pub enum CssOutlineBottomColor {
 }
 
 #[derive(Display, Clone, Debug)]
-#[display(fmt = "shadow: {}")]
+#[display(fmt = "shadow: {};")]
 pub enum CssShadow {
     #[display(fmt = "{},{},{},{}", _0, _1, _2, _3)]
     Shadow(ExactLength, ExactLength, ExactLength, String),
@@ -2203,7 +2209,7 @@ pub enum CssShadow {
 // S.box_shadow_build( px(3), px(2), rgb(30,40,50), |v| v.inset().blur(px(2)))
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "text-shadow: {}")]
+#[display(fmt = "text-shadow: {};")]
 pub enum CssTextShadow {
     #[display(fmt = "{} {} {} {}", _0, _1, _2, _3)]
     Shadow(ExactLength, ExactLength, ExactLength, String),
@@ -2217,7 +2223,7 @@ pub enum CssTextShadow {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "box-shadow: {}")]
+#[display(fmt = "box-shadow: {};")]
 pub enum CssBoxShadow {
     #[display(fmt = "{} {} {} {}", _0, _1, _2, _3)]
     Shadow(ExactLength, ExactLength, ExactLength, String),
@@ -2230,7 +2236,7 @@ pub enum CssBoxShadow {
     StringValue(String),
 }
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "grid-template-columns: {}")]
+#[display(fmt = "grid-template-columns: {};")]
 pub enum CssGridTemplateColumns {
     #[display(fmt = "initial")]
     Initial,
@@ -2242,7 +2248,7 @@ pub enum CssGridTemplateColumns {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "grid-template-rows: {}")]
+#[display(fmt = "grid-template-rows: {};")]
 pub enum CssGridTemplateRows {
     #[display(fmt = "initial")]
     Initial,
@@ -2254,7 +2260,7 @@ pub enum CssGridTemplateRows {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "grid-area: {}")]
+#[display(fmt = "grid-area: {};")]
 pub enum CssGridArea {
     #[display(fmt = "initial")]
     Initial,
@@ -2266,7 +2272,7 @@ pub enum CssGridArea {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "grid-auto-columns: {}")]
+#[display(fmt = "grid-auto-columns: {};")]
 pub enum CssGridAutoColumns {
     #[display(fmt = "initial")]
     Initial,
@@ -2278,7 +2284,7 @@ pub enum CssGridAutoColumns {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "grid-auto-rows: {}")]
+#[display(fmt = "grid-auto-rows: {};")]
 pub enum CssGridAutoRows {
     #[display(fmt = "initial")]
     Initial,
@@ -2290,7 +2296,7 @@ pub enum CssGridAutoRows {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "grid-auto-flow: {}")]
+#[display(fmt = "grid-auto-flow: {};")]
 pub enum CssGridAutoFlow {
     #[display(fmt = "row")]
     Row,
@@ -2312,7 +2318,7 @@ pub enum CssGridAutoFlow {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "flex: {}")]
+#[display(fmt = "flex: {};")]
 pub enum CssFlex {
     #[display(fmt = "0 1 auto")]
     Initial,
@@ -2324,7 +2330,7 @@ pub enum CssFlex {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "flex-direction: {}")]
+#[display(fmt = "flex-direction: {};")]
 pub enum CssFlexDirection {
     #[display(fmt = "row")]
     Row,
@@ -2344,7 +2350,7 @@ pub enum CssFlexDirection {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "flex-wrap: {}")]
+#[display(fmt = "flex-wrap: {};")]
 pub enum CssFlexWrap {
     #[display(fmt = "nowrap")]
     NoWrap,
@@ -2362,7 +2368,7 @@ pub enum CssFlexWrap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "align-items: {}")]
+#[display(fmt = "align-items: {};")]
 pub enum CssAlignItems {
     #[display(fmt = "normal")]
     Normal,
@@ -2386,7 +2392,7 @@ pub enum CssAlignItems {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "align-self: {}")]
+#[display(fmt = "align-self: {};")]
 pub enum CssAlignSelf {
     #[display(fmt = "normal")]
     Normal,
@@ -2410,7 +2416,7 @@ pub enum CssAlignSelf {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "justify-items: {}")]
+#[display(fmt = "justify-items: {};")]
 pub enum CssJustifyItems {
     #[display(fmt = "auto")]
     Auto,
@@ -2452,7 +2458,7 @@ pub enum CssJustifyItems {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "justify-self: {}")]
+#[display(fmt = "justify-self: {};")]
 pub enum CssJustifySelf {
     #[display(fmt = "auto")]
     Auto,
@@ -2494,7 +2500,7 @@ pub enum CssJustifySelf {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "justify-content: {}")]
+#[display(fmt = "justify-content: {};")]
 pub enum CssJustifyContent {
     #[display(fmt = "stretch")]
     Stretch,
@@ -2516,7 +2522,7 @@ pub enum CssJustifyContent {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "align-content: {}")]
+#[display(fmt = "align-content: {};")]
 pub enum CssAlignContent {
     #[display(fmt = "stretcj")]
     Stretch,
@@ -2539,7 +2545,7 @@ pub enum CssAlignContent {
     StringValue(String),
 }
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "box-sizing: {}")]
+#[display(fmt = "box-sizing: {};")]
 pub enum CssBoxSizing {
     #[display(fmt = "border-box")]
     BorderBox,
@@ -2671,7 +2677,7 @@ create_enums!([
 ]);
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "display: {}")]
+#[display(fmt = "display: {};")]
 pub enum CssDisplay {
     #[display(fmt = "inline")]
     Inline,

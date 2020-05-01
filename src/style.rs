@@ -40,14 +40,18 @@ fn short_uniq_id(id: u64) -> String {
     HASH_IDS_GENERATOR.with(|h| h.borrow().encode(&[id]).unwrap())
 }
 
+use objekt_clonable::*;
+#[clonable]
+pub trait CssValueTrait: std::fmt::Display + Clone + Sync + Send + std::fmt::Debug {}
+
 #[derive(Clone, Debug)]
 pub struct Rule {
-    value: CssValue,
+    value: Box<dyn CssValueTrait>,
 }
 
 impl Rule {
     fn render(&self) -> String {
-        format!("{};\n", self.value)
+        format!("{}\n", self.value)
     }
 }
 
@@ -229,14 +233,6 @@ impl Style {
         ("radius", "BorderRadius"),
     ]);
 
-    #[track_caller]
-    pub fn css(&self, val: &str) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.add_rule(CssValue::StringValue(val.to_string()));
-        new_style
-    }
-
     //
     // Display
     //
@@ -256,7 +252,7 @@ impl Style {
         new_style
     }
 
-    fn add_rule(&mut self, value: CssValue) {
+    fn add_rule(&mut self, value: Box<dyn CssValueTrait>) {
         self.rules.push(Rule {
             // property,
             value,
@@ -447,10 +443,7 @@ impl Style {
         ));
 
         for rule in &self.rules {
-            match &rule.value {
-                CssValue::StringValue(val) => style.push_str(&format!("{}\n", val)),
-                _ => style.push_str(&rule.render()),
-            }
+            style.push_str(&rule.render());
         }
 
         style
@@ -746,10 +739,7 @@ fn add_css_to_head_unchecked(css: &str, variant_hash: u64, style: &Style, name: 
         ));
 
         for rule in rule_vec {
-            match &rule.value {
-                CssValue::StringValue(val) => full_css.push_str(&format!("{}\n", val)),
-                _ => full_css.push_str(&rule.render()),
-            }
+            full_css.push_str(&rule.render());
         }
 
         full_css.push_str("}\n}\n");

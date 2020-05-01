@@ -17,6 +17,7 @@ anymap = "0.12.1"
 derive_more = "0.99.5"
 seed = {git = "https://github.com/seed-rs/seed.git"}
 seed_hooks = "0.1.2"
+objekt-clonable = "0.2.2"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.8" 
