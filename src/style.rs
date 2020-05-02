@@ -9,7 +9,7 @@ use std::panic::Location;
 use wasm_bindgen::JsCast;
 
 use lazy_static::*;
-use seed_style_macros::{create_pseudos, generate_short_f_names};
+use seed_style_macros::create_pseudos;
 mod css_values;
 pub use css_values::*;
 pub mod measures;
@@ -90,38 +90,42 @@ impl Default for Style {
 //         B: 'static;
 // }
 
-pub trait UpdateStyle<T>
-where
-    T: 'static + OtherCssValueTrait + CssValueTrait,
-{
-    type BaseType;
+// pub trait UpdateStyle<T>
+// where
+//     T: 'static + OtherCssValueTrait + CssValueTrait,
+// {
+//     // type BaseType;
 
-    fn update_style<S>(self, style: &Style) -> Style
-    where
-        S: OtherCssValueTrait + CssValueTrait;
-}
+//     fn update_style<S>(self, style: &Style) -> Style
+//     where
+//         S: OtherCssValueTrait + CssValueTrait;
+// }
 
-impl<T> UpdateStyle<T> for &'static str
-where
-    &'static str: Into<T>,
-    T: 'static + OtherCssValueTrait + CssValueTrait,
-{
-    type BaseType = ();
+// pub trait UpdateThemedStyle<B, T> {
+//    fn update_style<Th>(self, style:Style) -> Style where Th:
+// }
 
-    fn update_style<S>(self, style: &Style) -> Style
-    where
-        S: OtherCssValueTrait + CssValueTrait,
-    {
-        let mut new_style = style.clone();
+// impl<T> UpdateStyle<T> for &'static str
+// where
+//     &'static str: Into<T>,
+//     T: 'static + OtherCssValueTrait + CssValueTrait,
+// {
+//     // type BaseType = ();
 
-        let val: T = self.into();
+//     fn update_style<S>(self, style: &Style) -> Style
+//     where
+//         S: OtherCssValueTrait + CssValueTrait,
+//     {
+//         let mut new_style = style.clone();
 
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.add_rule(Box::new(val));
+//         let val: T = self.into();
 
-        new_style
-    }
-}
+//         new_style.updated_at.push(format!("{}", Location::caller()));
+//         new_style.add_rule(Box::new(val));
+
+//         new_style
+//     }
+// }
 
 pub trait OtherCssValueTrait {
     // fn create_from_str(val: &str) -> Self;

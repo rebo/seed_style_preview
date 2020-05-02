@@ -104,7 +104,7 @@ pub mod seed_colors {
         White,
         Black,
     }
-    impl ThemeKey for Base {}
+
     impl ColorTheme for Base {}
 
     #[derive(Hash, PartialEq, Eq, Clone)]
@@ -119,7 +119,7 @@ pub mod seed_colors {
         No8,
         No9,
     }
-    impl ThemeKey for Red {}
+
     impl ColorTheme for Red {}
     #[derive(Hash, PartialEq, Eq, Clone)]
     pub enum Blue {
@@ -133,7 +133,7 @@ pub mod seed_colors {
         No8,
         No9,
     }
-    impl ThemeKey for Blue {}
+
     impl ColorTheme for Blue {}
     #[derive(Hash, PartialEq, Eq, Clone)]
     pub enum Green {
@@ -147,7 +147,7 @@ pub mod seed_colors {
         No8,
         No9,
     }
-    impl ThemeKey for Green {}
+
     impl ColorTheme for Green {}
 
     #[derive(Hash, PartialEq, Eq, Clone)]
@@ -162,7 +162,7 @@ pub mod seed_colors {
         No8,
         No9,
     }
-    impl ThemeKey for Orange {}
+
     impl ColorTheme for Orange {}
 
     #[derive(Hash, PartialEq, Eq, Clone)]
@@ -177,7 +177,7 @@ pub mod seed_colors {
         No8,
         No9,
     }
-    impl ThemeKey for Pink {}
+
     impl ColorTheme for Pink {}
 
     #[derive(Hash, PartialEq, Eq, Clone)]
@@ -192,7 +192,7 @@ pub mod seed_colors {
         No8,
         No9,
     }
-    impl ThemeKey for Teal {}
+
     impl ColorTheme for Teal {}
 
     #[derive(Hash, PartialEq, Eq, Clone)]
@@ -207,7 +207,7 @@ pub mod seed_colors {
         No8,
         No9,
     }
-    impl ThemeKey for Indigo {}
+
     impl ColorTheme for Indigo {}
     #[derive(Hash, PartialEq, Eq, Clone)]
     pub enum Purple {
@@ -221,7 +221,7 @@ pub mod seed_colors {
         No8,
         No9,
     }
-    impl ThemeKey for Purple {}
+
     impl ColorTheme for Purple {}
 
     #[derive(Hash, PartialEq, Eq, Clone)]
@@ -236,7 +236,7 @@ pub mod seed_colors {
         No8,
         No9,
     }
-    impl ThemeKey for Gray {}
+
     impl ColorTheme for Gray {}
 
     #[derive(Hash, PartialEq, Eq, Clone)]
@@ -251,6 +251,6 @@ pub mod seed_colors {
         No8,
         No9,
     }
-    impl ThemeKey for Yellow {}
+
     impl ColorTheme for Yellow {}
 }

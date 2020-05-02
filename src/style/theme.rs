@@ -10,23 +10,23 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::panic::Location;
 
-pub trait BorderTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait BorderWidthTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait BorderStyleTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait SpaceTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait LineHeightTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait LetterSpacingTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait BorderRadiusTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait FontTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait FontSizeTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait SizeTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait TransitionTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait ZIndexTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait DisplayTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait ColorTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait ShadowTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait StyleTheme: Eq + Hash + Clone + ThemeKey {}
-pub trait BreakpointTheme: Eq + Hash + Clone + ThemeKey {}
+pub trait BorderTheme: Eq + Hash + Clone {}
+pub trait BorderWidthTheme: Eq + Hash + Clone {}
+pub trait BorderStyleTheme: Eq + Hash + Clone {}
+pub trait SpaceTheme: Eq + Hash + Clone {}
+pub trait LineHeightTheme: Eq + Hash + Clone {}
+pub trait LetterSpacingTheme: Eq + Hash + Clone {}
+pub trait BorderRadiusTheme: Eq + Hash + Clone {}
+pub trait FontTheme: Eq + Hash + Clone {}
+pub trait FontSizeTheme: Eq + Hash + Clone {}
+pub trait SizeTheme: Eq + Hash + Clone {}
+pub trait TransitionTheme: Eq + Hash + Clone {}
+pub trait ZIndexTheme: Eq + Hash + Clone {}
+pub trait DisplayTheme: Eq + Hash + Clone {}
+pub trait ColorTheme: Eq + Hash + Clone {}
+pub trait ShadowTheme: Eq + Hash + Clone {}
+pub trait StyleTheme: Eq + Hash + Clone {}
+pub trait BreakpointTheme: Eq + Hash + Clone {}
 
 // impl ThemeKey for CssBorder {
 //     type BaseValue = CssBorder;
@@ -107,6 +107,19 @@ impl From<CssSize> for CssWidth {
     }
 }
 
+impl From<CssWidth> for CssSize {
+    fn from(val: CssWidth) -> Self {
+        match val {
+            CssWidth::Auto => Self::Auto,
+            CssWidth::Length(val) => Self::Length(val),
+            CssWidth::Percentage(val) => Self::Percentage(val),
+            CssWidth::Initial => Self::Initial,
+            CssWidth::Inherit => Self::Inherit,
+            CssWidth::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
 impl From<CssSize> for CssHeight {
     fn from(val: CssSize) -> Self {
         match val {
@@ -116,6 +129,19 @@ impl From<CssSize> for CssHeight {
             CssSize::Initial => Self::Initial,
             CssSize::Inherit => Self::Inherit,
             CssSize::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
+impl From<CssHeight> for CssSize {
+    fn from(val: CssHeight) -> Self {
+        match val {
+            CssHeight::Auto => Self::Auto,
+            CssHeight::Length(val) => Self::Length(val),
+            CssHeight::Percentage(val) => Self::Percentage(val),
+            CssHeight::Initial => Self::Initial,
+            CssHeight::Inherit => Self::Inherit,
+            CssHeight::StringValue(val) => Self::StringValue(val),
         }
     }
 }
@@ -133,6 +159,19 @@ impl From<CssSize> for CssMinHeight {
     }
 }
 
+impl From<CssMinHeight> for CssSize {
+    fn from(val: CssMinHeight) -> Self {
+        match val {
+            CssMinHeight::Auto => Self::Auto,
+            CssMinHeight::Length(val) => Self::Length(val),
+            CssMinHeight::Percentage(val) => Self::Percentage(val),
+            CssMinHeight::Initial => Self::Initial,
+            CssMinHeight::Inherit => Self::Inherit,
+            CssMinHeight::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
 impl From<CssSize> for CssMinWidth {
     fn from(val: CssSize) -> Self {
         match val {
@@ -142,6 +181,19 @@ impl From<CssSize> for CssMinWidth {
             CssSize::Initial => Self::Initial,
             CssSize::Inherit => Self::Inherit,
             CssSize::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
+impl From<CssMinWidth> for CssSize {
+    fn from(val: CssMinWidth) -> Self {
+        match val {
+            CssMinWidth::Auto => Self::Auto,
+            CssMinWidth::Length(val) => Self::Length(val),
+            CssMinWidth::Percentage(val) => Self::Percentage(val),
+            CssMinWidth::Initial => Self::Initial,
+            CssMinWidth::Inherit => Self::Inherit,
+            CssMinWidth::StringValue(val) => Self::StringValue(val),
         }
     }
 }
@@ -159,6 +211,19 @@ impl From<CssSize> for CssMaxWidth {
     }
 }
 
+impl From<CssMaxWidth> for CssSize {
+    fn from(val: CssMaxWidth) -> Self {
+        match val {
+            CssMaxWidth::Auto => Self::Auto,
+            CssMaxWidth::Length(val) => Self::Length(val),
+            CssMaxWidth::Percentage(val) => Self::Percentage(val),
+            CssMaxWidth::Initial => Self::Initial,
+            CssMaxWidth::Inherit => Self::Inherit,
+            CssMaxWidth::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
 impl From<CssSize> for CssMaxHeight {
     fn from(val: CssSize) -> Self {
         match val {
@@ -168,6 +233,19 @@ impl From<CssSize> for CssMaxHeight {
             CssSize::Initial => Self::Initial,
             CssSize::Inherit => Self::Inherit,
             CssSize::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
+impl From<CssMaxHeight> for CssSize {
+    fn from(val: CssMaxHeight) -> Self {
+        match val {
+            CssMaxHeight::Auto => Self::Auto,
+            CssMaxHeight::Length(val) => Self::Length(val),
+            CssMaxHeight::Percentage(val) => Self::Percentage(val),
+            CssMaxHeight::Initial => Self::Initial,
+            CssMaxHeight::Inherit => Self::Inherit,
+            CssMaxHeight::StringValue(val) => Self::StringValue(val),
         }
     }
 }
@@ -185,6 +263,19 @@ impl From<CssSize> for CssFlexBasis {
     }
 }
 
+impl From<CssFlexBasis> for CssSize {
+    fn from(val: CssFlexBasis) -> Self {
+        match val {
+            CssFlexBasis::Auto => Self::Auto,
+            CssFlexBasis::Length(val) => Self::Length(val),
+            CssFlexBasis::Percentage(val) => Self::Percentage(val),
+            CssFlexBasis::Initial => Self::Initial,
+            CssFlexBasis::Inherit => Self::Inherit,
+            CssFlexBasis::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
 impl From<CssBorderRadius> for CssBorderTopRightRadius {
     fn from(val: CssBorderRadius) -> Self {
         match val {
@@ -197,6 +288,18 @@ impl From<CssBorderRadius> for CssBorderTopRightRadius {
     }
 }
 
+impl From<CssBorderTopRightRadius> for CssBorderRadius {
+    fn from(val: CssBorderTopRightRadius) -> Self {
+        match val {
+            CssBorderTopRightRadius::Length(val) => Self::Length(val),
+            CssBorderTopRightRadius::Percentage(val) => Self::Percentage(val),
+            CssBorderTopRightRadius::Initial => Self::Initial,
+            CssBorderTopRightRadius::Inherit => Self::Inherit,
+            CssBorderTopRightRadius::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
 impl From<CssBorderRadius> for CssBorderTopLeftRadius {
     fn from(val: CssBorderRadius) -> Self {
         match val {
@@ -205,6 +308,30 @@ impl From<CssBorderRadius> for CssBorderTopLeftRadius {
             CssBorderRadius::Initial => Self::Initial,
             CssBorderRadius::Inherit => Self::Inherit,
             CssBorderRadius::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
+impl From<CssBorderTopLeftRadius> for CssBorderRadius {
+    fn from(val: CssBorderTopLeftRadius) -> Self {
+        match val {
+            CssBorderTopLeftRadius::Length(val) => Self::Length(val),
+            CssBorderTopLeftRadius::Percentage(val) => Self::Percentage(val),
+            CssBorderTopLeftRadius::Initial => Self::Initial,
+            CssBorderTopLeftRadius::Inherit => Self::Inherit,
+            CssBorderTopLeftRadius::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
+impl From<CssBorderBottomRightRadius> for CssBorderRadius {
+    fn from(val: CssBorderBottomRightRadius) -> Self {
+        match val {
+            CssBorderBottomRightRadius::Length(val) => Self::Length(val),
+            CssBorderBottomRightRadius::Percentage(val) => Self::Percentage(val),
+            CssBorderBottomRightRadius::Initial => Self::Initial,
+            CssBorderBottomRightRadius::Inherit => Self::Inherit,
+            CssBorderBottomRightRadius::StringValue(val) => Self::StringValue(val),
         }
     }
 }
@@ -257,6 +384,18 @@ impl From<CssSpace> for CssPaddingLeft {
     }
 }
 
+impl From<CssPaddingLeft> for CssSpace {
+    fn from(val: CssPaddingLeft) -> Self {
+        match val {
+            CssPaddingLeft::Auto => Self::Auto,
+            CssPaddingLeft::Length(val) => Self::Length(val),
+            CssPaddingLeft::Percentage(val) => Self::Percentage(val),
+            CssPaddingLeft::Inherit => Self::Inherit,
+            CssPaddingLeft::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
 impl From<CssSpace> for CssPaddingRight {
     fn from(val: CssSpace) -> Self {
         match val {
@@ -265,6 +404,18 @@ impl From<CssSpace> for CssPaddingRight {
             CssSpace::Percentage(val) => Self::Percentage(val),
             CssSpace::Inherit => Self::Inherit,
             CssSpace::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
+impl From<CssPaddingRight> for CssSpace {
+    fn from(val: CssPaddingRight) -> Self {
+        match val {
+            CssPaddingRight::Auto => Self::Auto,
+            CssPaddingRight::Length(val) => Self::Length(val),
+            CssPaddingRight::Percentage(val) => Self::Percentage(val),
+            CssPaddingRight::Inherit => Self::Inherit,
+            CssPaddingRight::StringValue(val) => Self::StringValue(val),
         }
     }
 }
@@ -281,6 +432,18 @@ impl From<CssSpace> for CssPaddingTop {
     }
 }
 
+impl From<CssPaddingTop> for CssSpace {
+    fn from(val: CssPaddingTop) -> Self {
+        match val {
+            CssPaddingTop::Auto => Self::Auto,
+            CssPaddingTop::Length(val) => Self::Length(val),
+            CssPaddingTop::Percentage(val) => Self::Percentage(val),
+            CssPaddingTop::Inherit => Self::Inherit,
+            CssPaddingTop::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
 impl From<CssSpace> for CssPaddingBottom {
     fn from(val: CssSpace) -> Self {
         match val {
@@ -289,6 +452,18 @@ impl From<CssSpace> for CssPaddingBottom {
             CssSpace::Percentage(val) => Self::Percentage(val),
             CssSpace::Inherit => Self::Inherit,
             CssSpace::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
+impl From<CssPaddingBottom> for CssSpace {
+    fn from(val: CssPaddingBottom) -> Self {
+        match val {
+            CssPaddingBottom::Auto => Self::Auto,
+            CssPaddingBottom::Length(val) => Self::Length(val),
+            CssPaddingBottom::Percentage(val) => Self::Percentage(val),
+            CssPaddingBottom::Inherit => Self::Inherit,
+            CssPaddingBottom::StringValue(val) => Self::StringValue(val),
         }
     }
 }
@@ -317,6 +492,18 @@ impl From<CssSpace> for CssMarginLeft {
     }
 }
 
+impl From<CssMarginLeft> for CssSpace {
+    fn from(val: CssMarginLeft) -> Self {
+        match val {
+            CssMarginLeft::Auto => Self::Auto,
+            CssMarginLeft::Length(val) => Self::Length(val),
+            CssMarginLeft::Percentage(val) => Self::Percentage(val),
+            CssMarginLeft::Inherit => Self::Inherit,
+            CssMarginLeft::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
 impl From<CssSpace> for CssMarginRight {
     fn from(val: CssSpace) -> Self {
         match val {
@@ -325,6 +512,18 @@ impl From<CssSpace> for CssMarginRight {
             CssSpace::Percentage(val) => Self::Percentage(val),
             CssSpace::Inherit => Self::Inherit,
             CssSpace::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
+impl From<CssMarginRight> for CssSpace {
+    fn from(val: CssMarginRight) -> Self {
+        match val {
+            CssMarginRight::Auto => Self::Auto,
+            CssMarginRight::Length(val) => Self::Length(val),
+            CssMarginRight::Percentage(val) => Self::Percentage(val),
+            CssMarginRight::Inherit => Self::Inherit,
+            CssMarginRight::StringValue(val) => Self::StringValue(val),
         }
     }
 }
@@ -341,6 +540,18 @@ impl From<CssSpace> for CssMarginTop {
     }
 }
 
+impl From<CssMarginTop> for CssSpace {
+    fn from(val: CssMarginTop) -> Self {
+        match val {
+            CssMarginTop::Auto => Self::Auto,
+            CssMarginTop::Length(val) => Self::Length(val),
+            CssMarginTop::Percentage(val) => Self::Percentage(val),
+            CssMarginTop::Inherit => Self::Inherit,
+            CssMarginTop::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
 impl From<CssSpace> for CssMarginBottom {
     fn from(val: CssSpace) -> Self {
         match val {
@@ -349,6 +560,18 @@ impl From<CssSpace> for CssMarginBottom {
             CssSpace::Percentage(val) => Self::Percentage(val),
             CssSpace::Inherit => Self::Inherit,
             CssSpace::StringValue(val) => Self::StringValue(val),
+        }
+    }
+}
+
+impl From<CssMarginBottom> for CssSpace {
+    fn from(val: CssMarginBottom) -> Self {
+        match val {
+            CssMarginBottom::Auto => Self::Auto,
+            CssMarginBottom::Length(val) => Self::Length(val),
+            CssMarginBottom::Percentage(val) => Self::Percentage(val),
+            CssMarginBottom::Inherit => Self::Inherit,
+            CssMarginBottom::StringValue(val) => Self::StringValue(val),
         }
     }
 }
