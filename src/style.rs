@@ -9,7 +9,7 @@ use std::panic::Location;
 use wasm_bindgen::JsCast;
 
 use lazy_static::*;
-use seed_style_macros::{create_pseudos, generate_short_f_names};
+use seed_style_macros::create_pseudos;
 mod css_values;
 pub use css_values::*;
 pub mod measures;
@@ -87,6 +87,70 @@ pub trait UpdateStyle<T> {
     fn update_style(self, style: &Style) -> Style;
 }
 
+impl<'a, P> UpdateStyle<P> for &'a str
+where
+    P: 'static + Clone + CssValueTrait,
+    &'a str: Into<P>,
+{
+    fn update_style(self, style: &Style) -> Style {
+        let mut new_style = style.clone();
+        let val: P = self.into();
+        new_style.updated_at.push(format!("{}", Location::caller()));
+        new_style.add_rule(Box::new(val));
+        new_style
+    }
+}
+
+impl<P> UpdateStyle<P> for P
+where
+    P: 'static + Clone + CssValueTrait,
+{
+    fn update_style(self, style: &Style) -> Style {
+        let val: P = self.into();
+
+        let mut new_style = style.clone();
+        new_style.updated_at.push(format!("{}", Location::caller()));
+        new_style.add_rule(Box::new(val));
+        new_style
+    }
+}
+impl<R, P> UpdateStyle<P> for &[R]
+where
+    R: Into<P> + Clone,
+    P: 'static + Clone + CssValueTrait,
+{
+    fn update_style(self, style: &Style) -> Style {
+        with_themes(|borrowed_themes| {
+            let mut new_style = style.clone();
+            for (i, style_val) in &mut self.iter().cloned().map(|v| v.into()).enumerate() {
+                if let Some(breakpoint) = borrowed_themes
+                    .iter()
+                    .find_map(|theme| theme.media_bp_scale.get(i))
+                {
+                    new_style.updated_at.push(format!("{}", Location::caller()));
+                    let rules = new_style
+                        .media_rules
+                        .entry(breakpoint.0.clone())
+                        .or_insert(vec![]);
+                    rules.push(Rule {
+                        value: Box::new(style_val.clone()),
+                    })
+                }
+            }
+            new_style
+        })
+    }
+}
+
+impl<R, P> UpdateStyle<P> for &[R; 3]
+where
+    R: Into<P> + Clone,
+    P: 'static + Clone + CssValueTrait,
+{
+    fn update_style(self, style: &Style) -> Style {
+        self.as_ref().update_style(style)
+    }
+}
 // pub trait OverloadUpdateStyle<T>{
 //     fn update_st<Q>(self, val:Q) -> Style;
 // }
@@ -192,46 +256,46 @@ impl Style {
         self.margin_top(pt).margin_bottom(pb)
     }
 
-    generate_short_f_names!([
-        ("m", "Margin"),
-        ("ml", "MarginLeft"),
-        ("mr", "MarginRight"),
-        ("mt", "MarginTop"),
-        ("mb", "MarginBottom"),
-        ("p", "Padding"),
-        ("pl", "PaddingLeft"),
-        ("pr", "PaddingRight"),
-        ("pt", "PaddingTop"),
-        ("pb", "PaddingBottom"),
-        ("b_width", "BorderWidth"),
-        ("bl_width", "BorderLeftWidth"),
-        ("br_width", "BorderRightWidth"),
-        ("bt_width", "BorderTopWidth"),
-        ("bb_width", "BorderBottomWidth"),
-        ("b_color", "BorderColor"),
-        ("bl_color", "BorderLeftColor"),
-        ("br_color", "BorderRightColor"),
-        ("bt_color", "BorderTopColor"),
-        ("bb_color", "BorderBottomColor"),
-        ("b_style", "BorderStyle"),
-        ("bl_style", "BorderLeftStyle"),
-        ("br_style", "BorderRightStyle"),
-        ("bt_style", "BorderTopStyle"),
-        ("bb_style", "BorderBottomStyle"),
-        ("bg_color", "BackgroundColor"),
-        ("bg_image", "BackgroundImage"),
-        ("bg_position", "BackgroundPosition"),
-        ("bg_repeat", "BackgroundRepeat"),
-        ("bg_size", "BackgroundSize"),
-        ("w", "Width"),
-        ("h", "Height"),
-        ("min_h", "MinHeight"),
-        ("min_w", "MinWidth"),
-        ("max_h", "MaxHeight"),
-        ("max_w", "MaxWidth"),
-        ("pos", "Position"),
-        ("radius", "BorderRadius"),
-    ]);
+    // generate_short_f_names!([
+    //     ("m", "Margin"),
+    //     ("ml", "MarginLeft"),
+    //     ("mr", "MarginRight"),
+    //     ("mt", "MarginTop"),
+    //     ("mb", "MarginBottom"),
+    //     ("p", "Padding"),
+    //     ("pl", "PaddingLeft"),
+    //     ("pr", "PaddingRight"),
+    //     ("pt", "PaddingTop"),
+    //     ("pb", "PaddingBottom"),
+    //     ("b_width", "BorderWidth"),
+    //     ("bl_width", "BorderLeftWidth"),
+    //     ("br_width", "BorderRightWidth"),
+    //     ("bt_width", "BorderTopWidth"),
+    //     ("bb_width", "BorderBottomWidth"),
+    //     ("b_color", "BorderColor"),
+    //     ("bl_color", "BorderLeftColor"),
+    //     ("br_color", "BorderRightColor"),
+    //     ("bt_color", "BorderTopColor"),
+    //     ("bb_color", "BorderBottomColor"),
+    //     ("b_style", "BorderStyle"),
+    //     ("bl_style", "BorderLeftStyle"),
+    //     ("br_style", "BorderRightStyle"),
+    //     ("bt_style", "BorderTopStyle"),
+    //     ("bb_style", "BorderBottomStyle"),
+    //     ("bg_color", "BackgroundColor"),
+    //     ("bg_image", "BackgroundImage"),
+    //     ("bg_position", "BackgroundPosition"),
+    //     ("bg_repeat", "BackgroundRepeat"),
+    //     ("bg_size", "BackgroundSize"),
+    //     ("w", "Width"),
+    //     ("h", "Height"),
+    //     ("min_h", "MinHeight"),
+    //     ("min_w", "MinWidth"),
+    //     ("max_h", "MaxHeight"),
+    //     ("max_w", "MaxWidth"),
+    //     ("pos", "Position"),
+    //     ("radius", "BorderRadius"),
+    // ]);
 
     //
     // Display
