@@ -1,275 +1,277 @@
 use super::measures::*;
 use crate::style::theme::with_themes;
 use crate::style::CssValueTrait;
+use crate::style::OtherCssValueTrait;
 use crate::style::Rule;
 use crate::style::Style;
+use crate::style::ThemeKey;
 use crate::style::UpdateStyle;
 use derive_more::Display;
 use seed_style_macros::{create_enums, CssStyleMacro};
 use std::panic::Location;
 
-#[derive(Display, Clone, Debug)]
-pub enum CssValue {
-    // Themeable and shared s, i.e. Color is used for all Css color properties
-    Color(CssColor),
-    Size(CssSize),
-    Space(CssSpace),
-    Height(CssHeight),
-    MinHeight(CssMinHeight),
-    MinWidth(CssMinWidth),
-    MaxHeight(CssMaxHeight),
-    MaxWidth(CssMaxWidth),
-    Transition(CssTransition),
-    LineHeight(CssLineHeight),
-    LetterSpacing(CssLetterSpacing),
-    BorderRadius(CssBorderRadius),
-    Stroke(CssStroke),
-    BorderTopRightRadius(CssBorderTopRightRadius),
-    BorderTopLeftRadius(CssBorderTopLeftRadius),
-    BorderBottomRightRadius(CssBorderBottomRightRadius),
-    BorderBottomLeftRadius(CssBorderBottomLeftRadius),
-    Font(CssFont),
-    FontSize(CssFontSize),
-    ZIndex(CssZIndex),
-    // Back up for any property value not covered
-    StringValue(String),
-    // 'Single Property s, those values that apply to one property only.
-    FontFamily(CssFontFamily),
-    Display(CssDisplay),
-    AlignContent(CssAlignContent),
-    AlignItems(CssAlignItems),
-    AlignSelf(CssAlignSelf),
-    AnimationDelay(CssAnimationDelay),
-    AnimationDirection(CssAnimationDirection),
-    AnimationDuration(CssAnimationDuration),
-    AnimationFillMode(CssAnimationFillMode),
-    AnimationIterationCount(CssAnimationIterationCount),
-    AnimationName(CssAnimationName),
-    AnimationPlayState(CssAnimationPlayState),
-    AnimationTimingFunction(CssAnimationTimingFunction),
-    Animation(CssAnimation),
-    BackfaceVisibility(CssBackfaceVisibility),
-    Background(CssBackground),
-    BackgroundAttachment(CssBackgroundAttachment),
-    BackgroundBlendMode(CssBackgroundBlendMode),
-    BackgroundClip(CssBackgroundClip),
-    BackgroundColor(CssBackgroundColor),
-    BackgroundImage(CssBackgroundImage),
-    BackgroundOrigin(CssBackgroundOrigin),
-    BackgroundPosition(CssBackgroundPosition),
-    JustifyItems(CssJustifyItems),
-    JustifySelf(CssJustifySelf),
-    BackgroundRepeat(CssBackgroundRepeat),
-    BackgroundSize(CssBackgroundSize),
-    BorderCollapse(CssBorderCollapse),
-    BorderImage(CssBorderImage),
-    BorderImageOutset(CssBorderImageOutset),
-    BorderImageRepeat(CssBorderImageRepeat),
-    BorderImageSlice(CssBorderImageSlice),
-    BorderImageSource(CssBorderImageSource),
-    BorderImageWidth(CssBorderImageWidth),
-    Bottom(CssBottom),
-    BoxDecorationBreak(CssBoxDecorationBreak),
-    BoxShadow(CssBoxShadow),
-    BoxSizing(CssBoxSizing),
-    BreakAfter(CssBreakAfter),
-    BreakBefore(CssBreakBefore),
-    BreakInside(CssBreakInside),
-    CaptionSide(CssCaptionSide),
-    CaretColor(CssCaretColor),
-    Clear(CssClear),
-    Clip(CssClip),
-    ClipPath(CssClipPath),
-    ColumnCount(CssColumnCount),
-    ColumnFill(CssColumnFill),
-    ColumnGap(CssColumnGap),
-    ColumnRule(CssColumnRule),
-    ColumnRuleColor(CssColumnRuleColor),
-    ColumnRuleStyle(CssColumnRuleStyle),
-    ColumnRuleWidth(CssColumnRuleWidth),
-    ColumnSpan(CssColumnSpan),
-    ColumnWidth(CssColumnWidth),
-    Columns(CssColumns),
-    Content(CssContent),
-    CounterIncrement(CssCounterIncrement),
-    CounterReset(CssCounterReset),
-    Cursor(CssCursor),
-    Direction(CssDirection),
-    EmptyCells(CssEmptyCells),
-    Filter(CssFilter),
-    Flex(CssFlex),
-    FlexBasis(CssFlexBasis),
-    FlexDirection(CssFlexDirection),
-    FlexFlow(CssFlexFlow),
-    FlexGrow(CssFlexGrow),
-    FlexShrink(CssFlexShrink),
-    FlexWrap(CssFlexWrap),
-    Float(CssFloat),
-    FontWeight(CssFontWeight),
-    FontFeatureSettings(CssFontFeatureSettings),
-    FontKerning(CssFontKerning),
-    FontLanguageOverride(CssFontLanguageOverride),
-    FontSizeAdjust(CssFontSizeAdjust),
-    FontStretch(CssFontStretch),
-    FontStyle(CssFontStyle),
-    FontSynthesis(CssFontSynthesis),
-    FontVariant(CssFontVariant),
-    FontVariantAlternates(CssFontVariantAlternates),
-    FontVariantCaps(CssFontVariantCaps),
-    FontVariantEastAsian(CssFontVariantEastAsian),
-    FontVariantLigatures(CssFontVariantLigatures),
-    FontVariantNumeric(CssFontVariantNumeric),
-    FontVariantPosition(CssFontVariantPosition),
-    Grid(CssGrid),
-    Gap(CssGap),
-    RowGap(CssRowGap),
-    GridGap(CssGridGap),
-    GridRowGap(CssGridRowGap),
-    GridArea(CssGridArea),
-    GridAutoColumns(CssGridAutoColumns),
-    GridAutoFlow(CssGridAutoFlow),
-    GridAutoRows(CssGridAutoRows),
-    GridColumn(CssGridColumn),
-    GridColumnEnd(CssGridColumnEnd),
-    GridColumnGap(CssGridColumnGap),
-    GridColumnStart(CssGridColumnStart),
-    GridRow(CssGridRow),
-    GridRowEnd(CssGridRowEnd),
-    GridRowStart(CssGridRowStart),
-    GridTemplate(CssGridTemplate),
-    GridTemplateAreas(CssGridTemplateAreas),
-    GridTemplateColumns(CssGridTemplateColumns),
-    GridTemplateRows(CssGridTemplateRows),
-    Hyphens(CssHyphens),
-    ImageRendering(CssImageRendering),
-    Isolation(CssIsolation),
-    JustifyContent(CssJustifyContent),
-    Left(CssLeft),
-    ListStyleImage(CssListStyleImage),
-    ListStylePosition(CssListStylePosition),
-    ListStyleType(CssListStyleType),
-    ListStyle(CssListStyle),
-    PageBreak(CssPageBreak),
-    LineBreak(CssLineBreak),
-    Mask(CssMask),
-    MaskType(CssMaskType),
-    MixBlendMode(CssMixBlendMode),
-    ObjectFit(CssObjectFit),
-    ObjectPosition(CssObjectPosition),
-    Opacity(CssOpacity),
-    Order(CssOrder),
-    Orphans(CssOrphans),
-    Overflow(CssOverflow),
-    OverflowWrap(CssOverflowWrap),
-    OverflowX(CssOverflowX),
-    OverflowY(CssOverflowY),
-    PageBreakAfter(CssPageBreakAfter),
-    PageBreakBefore(CssPageBreakBefore),
-    PageBreakInside(CssPageBreakInside),
-    Perspective(CssPerspective),
-    PerspectiveOrigin(CssPerspectiveOrigin),
-    PlaceContent(CssPlaceContent),
-    PointerEvents(CssPointerEvents),
-    Position(CssPosition),
-    Quotes(CssQuotes),
-    Resize(CssResize),
-    Right(CssRight),
-    ScrollBehavior(CssScrollBehavior),
-    ShapeImageThreshold(CssShapeImageThreshold),
-    ShapeMargin(CssShapeMargin),
-    TabSize(CssTabSize),
-    TableLayout(CssTableLayout),
-    TextAlign(CssTextAlign),
-    TextAlignLast(CssTextAlignLast),
-    TextCombineUpright(CssTextCombineUpright),
-    TextDecoration(CssTextDecoration),
-    TextDecorationColor(CssTextDecorationColor),
-    TextDecorationLine(CssTextDecorationLine),
-    TextDecorationStyle(CssTextDecorationStyle),
-    TextEmphasis(CssTextEmphasis),
-    TextEmphasisColor(CssTextEmphasisColor),
-    TextEmphasisPosition(CssTextEmphasisPosition),
-    TextEmphasisStyle(CssTextEmphasisStyle),
-    TextIndent(CssTextIndent),
-    TextJustify(CssTextJustify),
-    TextOrientation(CssTextOrientation),
-    TextOverflow(CssTextOverflow),
-    TextShadow(CssTextShadow),
-    TextTransform(CssTextTransform),
-    TextUnderlinePosition(CssTextUnderlinePosition),
-    Top(CssTop),
-    TouchAction(CssTouchAction),
-    Transform(CssTransform),
-    TransformOrigin(CssTransformOrigin),
-    TransformStyle(CssTransformStyle),
-    TransitionDelay(CssTransitionDelay),
-    TransitionDuration(CssTransitionDuration),
-    TransitionProperty(CssTransitionProperty),
-    TransitionTimingFunction(CssTransitionTimingFunction),
-    UnicodeBidi(CssUnicodeBidi),
-    UserSelect(CssUserSelect),
-    VerticalAlign(CssVerticalAlign),
-    Visibility(CssVisibility),
-    WhiteSpace(CssWhiteSpace),
-    Widows(CssWidows),
-    Width(CssWidth),
-    WillChange(CssWillChange),
-    WordBreak(CssWordBreak),
-    WordSpacing(CssWordSpacing),
-    WordWrap(CssWordWrap),
-    WritingMode(CssWritingMode),
-    Fill(CssFill),
-    Margin(CssMargin),
-    MarginTop(CssMarginTop),
-    MarginBottom(CssMarginBottom),
-    MarginLeft(CssMarginLeft),
-    MarginRight(CssMarginRight),
-    Padding(CssPadding),
-    PaddingTop(CssPaddingTop),
-    PaddingBottom(CssPaddingBottom),
-    PaddingLeft(CssPaddingLeft),
-    PaddingRight(CssPaddingRight),
-    Outline(CssOutline),
-    OutlineTop(CssOutlineTop),
-    OutlineBottom(CssOutlineBottom),
-    OutlineLeft(CssOutlineLeft),
-    OutlineRight(CssOutlineRight),
-    Border(CssBorder),
-    BorderTop(CssBorderTop),
-    BorderBottom(CssBorderBottom),
-    BorderLeft(CssBorderLeft),
-    BorderRight(CssBorderRight),
-    OutlineColor(CssOutlineColor),
-    OutlineTopColor(CssOutlineTopColor),
-    OutlineBottomColor(CssOutlineBottomColor),
-    OutlineLeftColor(CssOutlineLeftColor),
-    OutlineRightColor(CssOutlineRightColor),
-    BorderColor(CssBorderColor),
-    BorderTopColor(CssBorderTopColor),
-    BorderBottomColor(CssBorderBottomColor),
-    BorderLeftColor(CssBorderLeftColor),
-    BorderRightColor(CssBorderRightColor),
-    OutlineStyle(CssOutlineStyle),
-    OutlineTopStyle(CssOutlineTopStyle),
-    OutlineBottomStyle(CssOutlineBottomStyle),
-    OutlineLeftStyle(CssOutlineLeftStyle),
-    OutlineRightStyle(CssOutlineRightStyle),
-    BorderStyle(CssBorderStyle),
-    BorderTopStyle(CssBorderTopStyle),
-    BorderBottomStyle(CssBorderBottomStyle),
-    BorderLeftStyle(CssBorderLeftStyle),
-    BorderRightStyle(CssBorderRightStyle),
-    OutlineWidth(CssOutlineWidth),
-    OutlineTopWidth(CssOutlineTopWidth),
-    OutlineBottomWidth(CssOutlineBottomWidth),
-    OutlineLeftWidth(CssOutlineLeftWidth),
-    OutlineRightWidth(CssOutlineRightWidth),
-    BorderWidth(CssBorderWidth),
-    BorderTopWidth(CssBorderTopWidth),
-    BorderBottomWidth(CssBorderBottomWidth),
-    BorderLeftWidth(CssBorderLeftWidth),
-    BorderRightWidth(CssBorderRightWidth),
-}
+// #[derive(Display, Clone, Debug)]
+// pub enum CssValue {
+//     // Themeable and shared s, i.e. Color is used for all Css color properties
+//     Color(CssColor),
+//     Size(CssSize),
+//     Space(CssSpace),
+//     Height(CssHeight),
+//     MinHeight(CssMinHeight),
+//     MinWidth(CssMinWidth),
+//     MaxHeight(CssMaxHeight),
+//     MaxWidth(CssMaxWidth),
+//     Transition(CssTransition),
+//     LineHeight(CssLineHeight),
+//     LetterSpacing(CssLetterSpacing),
+//     BorderRadius(CssBorderRadius),
+//     Stroke(CssStroke),
+//     BorderTopRightRadius(CssBorderTopRightRadius),
+//     BorderTopLeftRadius(CssBorderTopLeftRadius),
+//     BorderBottomRightRadius(CssBorderBottomRightRadius),
+//     BorderBottomLeftRadius(CssBorderBottomLeftRadius),
+//     Font(CssFont),
+//     FontSize(CssFontSize),
+//     ZIndex(CssZIndex),
+//     // Back up for any property value not covered
+//     StringValue(String),
+//     // 'Single Property s, those values that apply to one property only.
+//     FontFamily(CssFontFamily),
+//     Display(CssDisplay),
+//     AlignContent(CssAlignContent),
+//     AlignItems(CssAlignItems),
+//     AlignSelf(CssAlignSelf),
+//     AnimationDelay(CssAnimationDelay),
+//     AnimationDirection(CssAnimationDirection),
+//     AnimationDuration(CssAnimationDuration),
+//     AnimationFillMode(CssAnimationFillMode),
+//     AnimationIterationCount(CssAnimationIterationCount),
+//     AnimationName(CssAnimationName),
+//     AnimationPlayState(CssAnimationPlayState),
+//     AnimationTimingFunction(CssAnimationTimingFunction),
+//     Animation(CssAnimation),
+//     BackfaceVisibility(CssBackfaceVisibility),
+//     Background(CssBackground),
+//     BackgroundAttachment(CssBackgroundAttachment),
+//     BackgroundBlendMode(CssBackgroundBlendMode),
+//     BackgroundClip(CssBackgroundClip),
+//     BackgroundColor(CssBackgroundColor),
+//     BackgroundImage(CssBackgroundImage),
+//     BackgroundOrigin(CssBackgroundOrigin),
+//     BackgroundPosition(CssBackgroundPosition),
+//     JustifyItems(CssJustifyItems),
+//     JustifySelf(CssJustifySelf),
+//     BackgroundRepeat(CssBackgroundRepeat),
+//     BackgroundSize(CssBackgroundSize),
+//     BorderCollapse(CssBorderCollapse),
+//     BorderImage(CssBorderImage),
+//     BorderImageOutset(CssBorderImageOutset),
+//     BorderImageRepeat(CssBorderImageRepeat),
+//     BorderImageSlice(CssBorderImageSlice),
+//     BorderImageSource(CssBorderImageSource),
+//     BorderImageWidth(CssBorderImageWidth),
+//     Bottom(CssBottom),
+//     BoxDecorationBreak(CssBoxDecorationBreak),
+//     BoxShadow(CssBoxShadow),
+//     BoxSizing(CssBoxSizing),
+//     BreakAfter(CssBreakAfter),
+//     BreakBefore(CssBreakBefore),
+//     BreakInside(CssBreakInside),
+//     CaptionSide(CssCaptionSide),
+//     CaretColor(CssCaretColor),
+//     Clear(CssClear),
+//     Clip(CssClip),
+//     ClipPath(CssClipPath),
+//     ColumnCount(CssColumnCount),
+//     ColumnFill(CssColumnFill),
+//     ColumnGap(CssColumnGap),
+//     ColumnRule(CssColumnRule),
+//     ColumnRuleColor(CssColumnRuleColor),
+//     ColumnRuleStyle(CssColumnRuleStyle),
+//     ColumnRuleWidth(CssColumnRuleWidth),
+//     ColumnSpan(CssColumnSpan),
+//     ColumnWidth(CssColumnWidth),
+//     Columns(CssColumns),
+//     Content(CssContent),
+//     CounterIncrement(CssCounterIncrement),
+//     CounterReset(CssCounterReset),
+//     Cursor(CssCursor),
+//     Direction(CssDirection),
+//     EmptyCells(CssEmptyCells),
+//     Filter(CssFilter),
+//     Flex(CssFlex),
+//     FlexBasis(CssFlexBasis),
+//     FlexDirection(CssFlexDirection),
+//     FlexFlow(CssFlexFlow),
+//     FlexGrow(CssFlexGrow),
+//     FlexShrink(CssFlexShrink),
+//     FlexWrap(CssFlexWrap),
+//     Float(CssFloat),
+//     FontWeight(CssFontWeight),
+//     FontFeatureSettings(CssFontFeatureSettings),
+//     FontKerning(CssFontKerning),
+//     FontLanguageOverride(CssFontLanguageOverride),
+//     FontSizeAdjust(CssFontSizeAdjust),
+//     FontStretch(CssFontStretch),
+//     FontStyle(CssFontStyle),
+//     FontSynthesis(CssFontSynthesis),
+//     FontVariant(CssFontVariant),
+//     FontVariantAlternates(CssFontVariantAlternates),
+//     FontVariantCaps(CssFontVariantCaps),
+//     FontVariantEastAsian(CssFontVariantEastAsian),
+//     FontVariantLigatures(CssFontVariantLigatures),
+//     FontVariantNumeric(CssFontVariantNumeric),
+//     FontVariantPosition(CssFontVariantPosition),
+//     Grid(CssGrid),
+//     Gap(CssGap),
+//     RowGap(CssRowGap),
+//     GridGap(CssGridGap),
+//     GridRowGap(CssGridRowGap),
+//     GridArea(CssGridArea),
+//     GridAutoColumns(CssGridAutoColumns),
+//     GridAutoFlow(CssGridAutoFlow),
+//     GridAutoRows(CssGridAutoRows),
+//     GridColumn(CssGridColumn),
+//     GridColumnEnd(CssGridColumnEnd),
+//     GridColumnGap(CssGridColumnGap),
+//     GridColumnStart(CssGridColumnStart),
+//     GridRow(CssGridRow),
+//     GridRowEnd(CssGridRowEnd),
+//     GridRowStart(CssGridRowStart),
+//     GridTemplate(CssGridTemplate),
+//     GridTemplateAreas(CssGridTemplateAreas),
+//     GridTemplateColumns(CssGridTemplateColumns),
+//     GridTemplateRows(CssGridTemplateRows),
+//     Hyphens(CssHyphens),
+//     ImageRendering(CssImageRendering),
+//     Isolation(CssIsolation),
+//     JustifyContent(CssJustifyContent),
+//     Left(CssLeft),
+//     ListStyleImage(CssListStyleImage),
+//     ListStylePosition(CssListStylePosition),
+//     ListStyleType(CssListStyleType),
+//     ListStyle(CssListStyle),
+//     PageBreak(CssPageBreak),
+//     LineBreak(CssLineBreak),
+//     Mask(CssMask),
+//     MaskType(CssMaskType),
+//     MixBlendMode(CssMixBlendMode),
+//     ObjectFit(CssObjectFit),
+//     ObjectPosition(CssObjectPosition),
+//     Opacity(CssOpacity),
+//     Order(CssOrder),
+//     Orphans(CssOrphans),
+//     Overflow(CssOverflow),
+//     OverflowWrap(CssOverflowWrap),
+//     OverflowX(CssOverflowX),
+//     OverflowY(CssOverflowY),
+//     PageBreakAfter(CssPageBreakAfter),
+//     PageBreakBefore(CssPageBreakBefore),
+//     PageBreakInside(CssPageBreakInside),
+//     Perspective(CssPerspective),
+//     PerspectiveOrigin(CssPerspectiveOrigin),
+//     PlaceContent(CssPlaceContent),
+//     PointerEvents(CssPointerEvents),
+//     Position(CssPosition),
+//     Quotes(CssQuotes),
+//     Resize(CssResize),
+//     Right(CssRight),
+//     ScrollBehavior(CssScrollBehavior),
+//     ShapeImageThreshold(CssShapeImageThreshold),
+//     ShapeMargin(CssShapeMargin),
+//     TabSize(CssTabSize),
+//     TableLayout(CssTableLayout),
+//     TextAlign(CssTextAlign),
+//     TextAlignLast(CssTextAlignLast),
+//     TextCombineUpright(CssTextCombineUpright),
+//     TextDecoration(CssTextDecoration),
+//     TextDecorationColor(CssTextDecorationColor),
+//     TextDecorationLine(CssTextDecorationLine),
+//     TextDecorationStyle(CssTextDecorationStyle),
+//     TextEmphasis(CssTextEmphasis),
+//     TextEmphasisColor(CssTextEmphasisColor),
+//     TextEmphasisPosition(CssTextEmphasisPosition),
+//     TextEmphasisStyle(CssTextEmphasisStyle),
+//     TextIndent(CssTextIndent),
+//     TextJustify(CssTextJustify),
+//     TextOrientation(CssTextOrientation),
+//     TextOverflow(CssTextOverflow),
+//     TextShadow(CssTextShadow),
+//     TextTransform(CssTextTransform),
+//     TextUnderlinePosition(CssTextUnderlinePosition),
+//     Top(CssTop),
+//     TouchAction(CssTouchAction),
+//     Transform(CssTransform),
+//     TransformOrigin(CssTransformOrigin),
+//     TransformStyle(CssTransformStyle),
+//     TransitionDelay(CssTransitionDelay),
+//     TransitionDuration(CssTransitionDuration),
+//     TransitionProperty(CssTransitionProperty),
+//     TransitionTimingFunction(CssTransitionTimingFunction),
+//     UnicodeBidi(CssUnicodeBidi),
+//     UserSelect(CssUserSelect),
+//     VerticalAlign(CssVerticalAlign),
+//     Visibility(CssVisibility),
+//     WhiteSpace(CssWhiteSpace),
+//     Widows(CssWidows),
+//     Width(CssWidth),
+//     WillChange(CssWillChange),
+//     WordBreak(CssWordBreak),
+//     WordSpacing(CssWordSpacing),
+//     WordWrap(CssWordWrap),
+//     WritingMode(CssWritingMode),
+//     Fill(CssFill),
+//     Margin(CssMargin),
+//     MarginTop(CssMarginTop),
+//     MarginBottom(CssMarginBottom),
+//     MarginLeft(CssMarginLeft),
+//     MarginRight(CssMarginRight),
+//     Padding(CssPadding),
+//     PaddingTop(CssPaddingTop),
+//     PaddingBottom(CssPaddingBottom),
+//     PaddingLeft(CssPaddingLeft),
+//     PaddingRight(CssPaddingRight),
+//     Outline(CssOutline),
+//     OutlineTop(CssOutlineTop),
+//     OutlineBottom(CssOutlineBottom),
+//     OutlineLeft(CssOutlineLeft),
+//     OutlineRight(CssOutlineRight),
+//     Border(CssBorder),
+//     BorderTop(CssBorderTop),
+//     BorderBottom(CssBorderBottom),
+//     BorderLeft(CssBorderLeft),
+//     BorderRight(CssBorderRight),
+//     OutlineColor(CssOutlineColor),
+//     OutlineTopColor(CssOutlineTopColor),
+//     OutlineBottomColor(CssOutlineBottomColor),
+//     OutlineLeftColor(CssOutlineLeftColor),
+//     OutlineRightColor(CssOutlineRightColor),
+//     BorderColor(CssBorderColor),
+//     BorderTopColor(CssBorderTopColor),
+//     BorderBottomColor(CssBorderBottomColor),
+//     BorderLeftColor(CssBorderLeftColor),
+//     BorderRightColor(CssBorderRightColor),
+//     OutlineStyle(CssOutlineStyle),
+//     OutlineTopStyle(CssOutlineTopStyle),
+//     OutlineBottomStyle(CssOutlineBottomStyle),
+//     OutlineLeftStyle(CssOutlineLeftStyle),
+//     OutlineRightStyle(CssOutlineRightStyle),
+//     BorderStyle(CssBorderStyle),
+//     BorderTopStyle(CssBorderTopStyle),
+//     BorderBottomStyle(CssBorderBottomStyle),
+//     BorderLeftStyle(CssBorderLeftStyle),
+//     BorderRightStyle(CssBorderRightStyle),
+//     OutlineWidth(CssOutlineWidth),
+//     OutlineTopWidth(CssOutlineTopWidth),
+//     OutlineBottomWidth(CssOutlineBottomWidth),
+//     OutlineLeftWidth(CssOutlineLeftWidth),
+//     OutlineRightWidth(CssOutlineRightWidth),
+//     BorderWidth(CssBorderWidth),
+//     BorderTopWidth(CssBorderTopWidth),
+//     BorderBottomWidth(CssBorderBottomWidth),
+//     BorderLeftWidth(CssBorderLeftWidth),
+//     BorderRightWidth(CssBorderRightWidth),
+// }
 
 #[derive(Debug)]
 pub struct CssMedia(pub String);
@@ -895,6 +897,7 @@ pub enum CssWordSpacing {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssZIndex"]
 #[display(fmt = "z-index: {};")]
 pub enum CssZIndex {
     #[display(fmt = "auto")]
@@ -907,6 +910,7 @@ pub enum CssZIndex {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "m"]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "margin: {};")]
 pub enum CssMargin {
     Length(ExactLength),
@@ -920,6 +924,7 @@ pub enum CssMargin {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "mt"]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "margin-top: {};")]
 pub enum CssMarginTop {
     Length(ExactLength),
@@ -933,6 +938,7 @@ pub enum CssMarginTop {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "mb"]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "margin-bottom: {};")]
 pub enum CssMarginBottom {
     Length(ExactLength),
@@ -945,6 +951,7 @@ pub enum CssMarginBottom {
 }
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "ml"]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "margin-left: {};")]
 pub enum CssMarginLeft {
     Length(ExactLength),
@@ -958,6 +965,7 @@ pub enum CssMarginLeft {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "mr"]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "margin-right: {};")]
 pub enum CssMarginRight {
     Length(ExactLength),
@@ -970,6 +978,7 @@ pub enum CssMarginRight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "generic-space: {};")]
 pub enum CssSpace {
     Length(ExactLength),
@@ -1030,6 +1039,7 @@ pub enum CssRight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "grid-gap: {};")]
 pub enum CssGridGap {
     Length(ExactLength),
@@ -1042,6 +1052,7 @@ pub enum CssGridGap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "grid-column-gap: {};")]
 pub enum CssGridColumnGap {
     Length(ExactLength),
@@ -1054,6 +1065,7 @@ pub enum CssGridColumnGap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "grid-row-gap: {};")]
 pub enum CssGridRowGap {
     Length(ExactLength),
@@ -1066,6 +1078,7 @@ pub enum CssGridRowGap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "gap: {};")]
 pub enum CssGap {
     Length(ExactLength),
@@ -1078,6 +1091,7 @@ pub enum CssGap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "column-gap: {};")]
 pub enum CssColumnGap {
     Length(ExactLength),
@@ -1090,6 +1104,7 @@ pub enum CssColumnGap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[display(fmt = "row-gap: {};")]
 pub enum CssRowGap {
     Length(ExactLength),
@@ -1102,6 +1117,7 @@ pub enum CssRowGap {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[short_prop = "p"]
 #[display(fmt = "padding: {};")]
 pub enum CssPadding {
@@ -1114,6 +1130,7 @@ pub enum CssPadding {
     StringValue(String),
 }
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[short_prop = "pt"]
 #[display(fmt = "padding-top: {};")]
 pub enum CssPaddingTop {
@@ -1127,6 +1144,7 @@ pub enum CssPaddingTop {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[short_prop = "pr"]
 #[display(fmt = "padding-right: {};")]
 pub enum CssPaddingRight {
@@ -1139,6 +1157,7 @@ pub enum CssPaddingRight {
     StringValue(String),
 }
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[short_prop = "pl"]
 #[display(fmt = "padding-left: {};")]
 pub enum CssPaddingLeft {
@@ -1152,6 +1171,7 @@ pub enum CssPaddingLeft {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSpace"]
 #[short_prop = "pb"]
 #[display(fmt = "padding-bottom: {};")]
 pub enum CssPaddingBottom {
@@ -1165,6 +1185,7 @@ pub enum CssPaddingBottom {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderStyle"]
 #[short_prop = "b_style"]
 #[display(fmt = "border-style: {};")]
 pub enum CssBorderStyle {
@@ -1196,6 +1217,7 @@ pub enum CssBorderStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderStyle"]
 #[short_prop = "bl_style"]
 #[display(fmt = "border-left-style: {};")]
 pub enum CssBorderLeftStyle {
@@ -1227,6 +1249,7 @@ pub enum CssBorderLeftStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderStyle"]
 #[short_prop = "br_style"]
 #[display(fmt = "border-right-style: {};")]
 pub enum CssBorderRightStyle {
@@ -1258,6 +1281,7 @@ pub enum CssBorderRightStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderStyle"]
 #[short_prop = "bt_style"]
 #[display(fmt = "border-top-style: {};")]
 pub enum CssBorderTopStyle {
@@ -1289,6 +1313,7 @@ pub enum CssBorderTopStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderStyle"]
 #[short_prop = "bb_style"]
 #[display(fmt = "border-bottom-style: {};")]
 pub enum CssBorderBottomStyle {
@@ -1320,6 +1345,7 @@ pub enum CssBorderBottomStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderStyle"]
 #[display(fmt = "outline-style: {};")]
 pub enum CssOutlineStyle {
     #[display(fmt = "none")]
@@ -1350,6 +1376,7 @@ pub enum CssOutlineStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderStyle"]
 #[display(fmt = "outline-left-style: {};")]
 pub enum CssOutlineLeftStyle {
     #[display(fmt = "none")]
@@ -1380,6 +1407,7 @@ pub enum CssOutlineLeftStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderStyle"]
 #[display(fmt = "outline-right-style: {};")]
 pub enum CssOutlineRightStyle {
     #[display(fmt = "none")]
@@ -1410,6 +1438,7 @@ pub enum CssOutlineRightStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderStyle"]
 #[display(fmt = "outline-top-style: {};")]
 pub enum CssOutlineTopStyle {
     #[display(fmt = "none")]
@@ -1440,6 +1469,7 @@ pub enum CssOutlineTopStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderStyle"]
 #[display(fmt = "outline-bottom-style: {};")]
 pub enum CssOutlineBottomStyle {
     #[display(fmt = "none")]
@@ -1470,6 +1500,7 @@ pub enum CssOutlineBottomStyle {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderWidth"]
 #[short_prop = "b_width"]
 #[display(fmt = "border-width: {};")]
 pub enum CssBorderWidth {
@@ -1488,6 +1519,7 @@ pub enum CssBorderWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderWidth"]
 #[short_prop = "bl_width"]
 #[display(fmt = "border-left-width: {};")]
 pub enum CssBorderLeftWidth {
@@ -1506,6 +1538,7 @@ pub enum CssBorderLeftWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderWidth"]
 #[short_prop = "br_width"]
 #[display(fmt = "border-right-width: {};")]
 pub enum CssBorderRightWidth {
@@ -1524,6 +1557,7 @@ pub enum CssBorderRightWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderWidth"]
 #[short_prop = "bt_width"]
 #[display(fmt = "border-top-width: {};")]
 pub enum CssBorderTopWidth {
@@ -1542,6 +1576,7 @@ pub enum CssBorderTopWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderWidth"]
 #[short_prop = "bb_width"]
 #[display(fmt = "border-bottom-width: {};")]
 pub enum CssBorderBottomWidth {
@@ -1560,6 +1595,7 @@ pub enum CssBorderBottomWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderWidth"]
 #[display(fmt = "outline-width: {};")]
 pub enum CssOutlineWidth {
     #[display(fmt = "medium")]
@@ -1577,6 +1613,7 @@ pub enum CssOutlineWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderWidth"]
 #[display(fmt = "outline-left-width: {};")]
 pub enum CssOutlineLeftWidth {
     #[display(fmt = "medium")]
@@ -1594,6 +1631,7 @@ pub enum CssOutlineLeftWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderWidth"]
 #[display(fmt = "outline-right-width: {};")]
 pub enum CssOutlineRightWidth {
     #[display(fmt = "medium")]
@@ -1611,6 +1649,7 @@ pub enum CssOutlineRightWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderWidth"]
 #[display(fmt = "outline-top-width: {};")]
 pub enum CssOutlineTopWidth {
     #[display(fmt = "medium")]
@@ -1628,6 +1667,7 @@ pub enum CssOutlineTopWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderWidth"]
 #[display(fmt = "outline-bottom-width: {};")]
 pub enum CssOutlineBottomWidth {
     #[display(fmt = "medium")]
@@ -1645,6 +1685,7 @@ pub enum CssOutlineBottomWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSize"]
 #[display(fmt = "generic-size: {};")]
 pub enum CssSize {
     #[display(fmt = "auto")]
@@ -1659,6 +1700,7 @@ pub enum CssSize {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSize"]
 #[display(fmt = "flex-basis: {};")]
 pub enum CssFlexBasis {
     #[display(fmt = "auto")]
@@ -1673,6 +1715,7 @@ pub enum CssFlexBasis {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSize"]
 #[short_prop = "w"]
 #[display(fmt = "width: {};")]
 pub enum CssWidth {
@@ -1688,6 +1731,7 @@ pub enum CssWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSize"]
 #[short_prop = "h"]
 #[display(fmt = "height: {};")]
 pub enum CssHeight {
@@ -1703,6 +1747,7 @@ pub enum CssHeight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSize"]
 #[short_prop = "min_w"]
 #[display(fmt = "min-width: {};")]
 pub enum CssMinWidth {
@@ -1718,6 +1763,7 @@ pub enum CssMinWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSize"]
 #[short_prop = "max_w"]
 #[display(fmt = "max-width: {};")]
 pub enum CssMaxWidth {
@@ -1733,6 +1779,7 @@ pub enum CssMaxWidth {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSize"]
 #[short_prop = "min_h"]
 #[display(fmt = "min-height: {};")]
 pub enum CssMinHeight {
@@ -1748,6 +1795,7 @@ pub enum CssMinHeight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssSize"]
 #[short_prop = "max_h"]
 #[display(fmt = "max-height: {};")]
 pub enum CssMaxHeight {
@@ -1763,6 +1811,7 @@ pub enum CssMaxHeight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorder"]
 #[display(fmt = "border: {};")]
 pub enum CssBorder {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
@@ -1773,6 +1822,7 @@ pub enum CssBorder {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorder"]
 #[display(fmt = "border-left: {};")]
 pub enum CssBorderLeft {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
@@ -1783,6 +1833,7 @@ pub enum CssBorderLeft {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorder"]
 #[display(fmt = "border-right: {};")]
 pub enum CssBorderRight {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
@@ -1793,6 +1844,7 @@ pub enum CssBorderRight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorder"]
 #[display(fmt = "border-top: {};")]
 pub enum CssBorderTop {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
@@ -1803,6 +1855,7 @@ pub enum CssBorderTop {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorder"]
 #[display(fmt = "border-bottom: {};")]
 pub enum CssBorderBottom {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
@@ -1813,6 +1866,7 @@ pub enum CssBorderBottom {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorder"]
 #[display(fmt = "outline: {};")]
 pub enum CssOutline {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
@@ -1825,6 +1879,7 @@ pub enum CssOutline {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorder"]
 #[display(fmt = "outline-left: {};")]
 pub enum CssOutlineLeft {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
@@ -1837,6 +1892,7 @@ pub enum CssOutlineLeft {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorder"]
 #[display(fmt = "outline-right: {};")]
 pub enum CssOutlineRight {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
@@ -1849,6 +1905,7 @@ pub enum CssOutlineRight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorder"]
 #[display(fmt = "outline-top: {};")]
 pub enum CssOutlineTop {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
@@ -1861,6 +1918,7 @@ pub enum CssOutlineTop {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorder"]
 #[display(fmt = "outline-bottom: {};")]
 pub enum CssOutlineBottom {
     #[display(fmt = "{} {} {}", _0, _1, _2)]
@@ -1873,6 +1931,7 @@ pub enum CssOutlineBottom {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssTransition"]
 #[display(fmt = "transition: {};")]
 pub enum CssTransition {
     StringValue(String),
@@ -1891,6 +1950,7 @@ pub enum CssLetterSpacing {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssLineHeight"]
 #[display(fmt = "line-height: {};")]
 pub enum CssLineHeight {
     Normal,
@@ -1903,6 +1963,7 @@ pub enum CssLineHeight {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderRadius"]
 #[short_prop = "radius"]
 #[display(fmt = "border-radius: {};")]
 pub enum CssBorderRadius {
@@ -1915,6 +1976,7 @@ pub enum CssBorderRadius {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderRadius"]
 #[display(fmt = "border-top-right-radius: {};")]
 pub enum CssBorderTopRightRadius {
     Length(ExactLength),
@@ -1926,6 +1988,7 @@ pub enum CssBorderTopRightRadius {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderRadius"]
 #[display(fmt = "border--top-left-radius: {};")]
 pub enum CssBorderTopLeftRadius {
     Length(ExactLength),
@@ -1937,6 +2000,7 @@ pub enum CssBorderTopLeftRadius {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderRadius"]
 #[display(fmt = "border-bottom-right-radius: {};")]
 pub enum CssBorderBottomRightRadius {
     Length(ExactLength),
@@ -1948,6 +2012,7 @@ pub enum CssBorderBottomRightRadius {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssBorderRadius"]
 #[display(fmt = "border-bottom-left-radius: {};")]
 pub enum CssBorderBottomLeftRadius {
     Length(ExactLength),
@@ -1959,6 +2024,7 @@ pub enum CssBorderBottomLeftRadius {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssFont"]
 #[display(fmt = "font: {};")]
 pub enum CssFont {
     #[display(fmt = "{} {} {} {}/{} {}", _0, _1, _2, _3, _4, _5)]
@@ -1976,6 +2042,7 @@ pub enum CssFont {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssFontSize"]
 #[display(fmt = "font-size: {};")]
 pub enum CssFontSize {
     Size(ExactLength),
@@ -1986,6 +2053,7 @@ pub enum CssFontSize {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssColor"]
 #[display(fmt = "color: {};")]
 pub enum CssColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
@@ -2000,6 +2068,7 @@ pub enum CssColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssColor"]
 #[display(fmt = "stroke: {};")]
 pub enum CssStroke {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
@@ -2014,6 +2083,7 @@ pub enum CssStroke {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssColor"]
 #[short_prop = "bg_color"]
 #[display(fmt = "background-color: {};")]
 pub enum CssBackgroundColor {
@@ -2029,6 +2099,7 @@ pub enum CssBackgroundColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssColor"]
 #[display(fmt = "fill: {};")]
 pub enum CssFill {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
@@ -2044,6 +2115,7 @@ pub enum CssFill {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "b_color"]
+#[css_base_type = "CssColor"]
 #[display(fmt = "border-color: {};")]
 pub enum CssBorderColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
@@ -2059,6 +2131,7 @@ pub enum CssBorderColor {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bl_color"]
+#[css_base_type = "CssColor"]
 #[display(fmt = "border-left-color: {};")]
 pub enum CssBorderLeftColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
@@ -2074,6 +2147,7 @@ pub enum CssBorderLeftColor {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "br_color"]
+#[css_base_type = "CssColor"]
 #[display(fmt = "border-right-color: {};")]
 pub enum CssBorderRightColor {
     #[display(fmt = "{} {} {} {})", _0, _1, _2, _3)]
@@ -2088,6 +2162,7 @@ pub enum CssBorderRightColor {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bt_color"]
+#[css_base_type = "CssColor"]
 #[display(fmt = "border-top-color: {};")]
 pub enum CssBorderTopColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
@@ -2103,6 +2178,7 @@ pub enum CssBorderTopColor {
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bb_color"]
+#[css_base_type = "CssColor"]
 #[display(fmt = "border-bottom-color: {};")]
 pub enum CssBorderBottomColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
@@ -2117,6 +2193,7 @@ pub enum CssBorderBottomColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssColor"]
 #[display(fmt = "outline-color: {};")]
 pub enum CssOutlineColor {
     #[display(fmt = "rgba({},{},{},{}", _0, _1, _2, _3)]
@@ -2131,6 +2208,7 @@ pub enum CssOutlineColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssColor"]
 #[display(fmt = "outline-left-color: {};")]
 pub enum CssOutlineLeftColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
@@ -2145,6 +2223,7 @@ pub enum CssOutlineLeftColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssColor"]
 #[display(fmt = "outline-right-color: {};")]
 pub enum CssOutlineRightColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
@@ -2159,6 +2238,7 @@ pub enum CssOutlineRightColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssColor"]
 #[display(fmt = "outline-top-color: {};")]
 pub enum CssOutlineTopColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
@@ -2173,6 +2253,7 @@ pub enum CssOutlineTopColor {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssColor"]
 #[display(fmt = "outline-bottom-color: {};")]
 pub enum CssOutlineBottomColor {
     #[display(fmt = "rgba({},{},{},{})", _0, _1, _2, _3)]
@@ -2186,7 +2267,8 @@ pub enum CssOutlineBottomColor {
     Inherit,
 }
 
-#[derive(Display, Clone, Debug)]
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssShadow"]
 #[display(fmt = "shadow: {};")]
 pub enum CssShadow {
     #[display(fmt = "{},{},{},{}", _0, _1, _2, _3)]
@@ -2209,6 +2291,7 @@ pub enum CssShadow {
 // S.box_shadow_build( px(3), px(2), rgb(30,40,50), |v| v.inset().blur(px(2)))
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssShadow"]
 #[display(fmt = "text-shadow: {};")]
 pub enum CssTextShadow {
     #[display(fmt = "{} {} {} {}", _0, _1, _2, _3)]
@@ -2223,6 +2306,7 @@ pub enum CssTextShadow {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[css_base_type = "CssShadow"]
 #[display(fmt = "box-shadow: {};")]
 pub enum CssBoxShadow {
     #[display(fmt = "{} {} {} {}", _0, _1, _2, _3)]

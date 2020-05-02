@@ -83,9 +83,109 @@ impl Default for Style {
     }
 }
 
-pub trait UpdateStyle<T> {
-    fn update_style(self, style: &Style) -> Style;
+// pub trait UpdateStyle {
+//     fn update_style<T, B>(self, style: &Style) -> Style
+//     where
+//         T: 'static + OtherCssValueTrait + CssValueTrait + std::convert::From<B>,
+//         B: 'static;
+// }
+
+pub trait UpdateStyle<T>
+where
+    T: 'static + OtherCssValueTrait + CssValueTrait,
+{
+    type BaseType;
+
+    fn update_style<S>(self, style: &Style) -> Style
+    where
+        S: OtherCssValueTrait + CssValueTrait;
 }
+
+impl<T> UpdateStyle<T> for &'static str
+where
+    &'static str: Into<T>,
+    T: 'static + OtherCssValueTrait + CssValueTrait,
+{
+    type BaseType = ();
+
+    fn update_style<S>(self, style: &Style) -> Style
+    where
+        S: OtherCssValueTrait + CssValueTrait,
+    {
+        let mut new_style = style.clone();
+
+        let val: T = self.into();
+
+        new_style.updated_at.push(format!("{}", Location::caller()));
+        new_style.add_rule(Box::new(val));
+
+        new_style
+    }
+}
+
+pub trait OtherCssValueTrait {
+    // fn create_from_str(val: &str) -> Self;
+    // fn create_from_theme_key<B, Th>(val: Th) -> Self
+    // where
+    //     Th: ThemeKey + Into<B>,
+    //     B: Into<Self>,
+    //     Self: Sized;
+}
+pub trait ThemeKey {}
+
+// impl UpdateStyle<> for Th
+// where
+//     Th: ThemeKey<CssColor> + Sized,
+// {
+//     fn update_style<T>(self, style: &Style) -> Style
+//     where
+//         T: 'static + OtherCssValueTrait + CssValueTrait,
+//     {
+//         let val = <T as OtherCssValueTrait>::create_from_theme_key::<
+//             <Th as ThemeKey<CssColor>>::BaseValue,
+//         >(self);
+
+//         let mut new_style = style.clone();
+//         new_style.updated_at.push(format!("{}", Location::caller()));
+//         new_style.add_rule(Box::new(val));
+//         new_style
+//     }
+// }
+
+// impl<Th, B> UpdateStyle for Th
+// where
+//     Th: 'static + ThemeKey + Into<B>,
+// {
+//     fn update_style<T, B>(self, style: &Style) -> Style
+//     where
+//         T: 'static + OtherCssValueTrait + CssValueTrait + std::convert::From<B>,
+//         B: 'static,
+//     {
+//         let val = <T as OtherCssValueTrait>::create_from_theme_key::<B, Self>(self);
+
+//         let mut new_style = style.clone();
+//         new_style.updated_at.push(format!("{}", Location::caller()));
+//         new_style.add_rule(Box::new(val));
+//         new_style
+//     }
+// }
+
+// impl UpdateStyle for &str {
+//     fn update_style<T, B>(self, style: &Style) -> Style
+//     where
+//         T: 'static + OtherCssValueTrait + CssValueTrait + std::convert::From<B>,
+//         B: 'static,
+//     {
+//         let mut new_style = style.clone();
+
+//         let val = <T as OtherCssValueTrait>::create_from_str(self);
+
+//         new_style.updated_at.push(format!("{}", Location::caller()));
+//         new_style.add_rule(Box::new(val));
+
+//         new_style
+//     }
+// }
 
 // pub trait OverloadUpdateStyle<T>{
 //     fn update_st<Q>(self, val:Q) -> Style;
@@ -192,46 +292,46 @@ impl Style {
         self.margin_top(pt).margin_bottom(pb)
     }
 
-    generate_short_f_names!([
-        ("m", "Margin"),
-        ("ml", "MarginLeft"),
-        ("mr", "MarginRight"),
-        ("mt", "MarginTop"),
-        ("mb", "MarginBottom"),
-        ("p", "Padding"),
-        ("pl", "PaddingLeft"),
-        ("pr", "PaddingRight"),
-        ("pt", "PaddingTop"),
-        ("pb", "PaddingBottom"),
-        ("b_width", "BorderWidth"),
-        ("bl_width", "BorderLeftWidth"),
-        ("br_width", "BorderRightWidth"),
-        ("bt_width", "BorderTopWidth"),
-        ("bb_width", "BorderBottomWidth"),
-        ("b_color", "BorderColor"),
-        ("bl_color", "BorderLeftColor"),
-        ("br_color", "BorderRightColor"),
-        ("bt_color", "BorderTopColor"),
-        ("bb_color", "BorderBottomColor"),
-        ("b_style", "BorderStyle"),
-        ("bl_style", "BorderLeftStyle"),
-        ("br_style", "BorderRightStyle"),
-        ("bt_style", "BorderTopStyle"),
-        ("bb_style", "BorderBottomStyle"),
-        ("bg_color", "BackgroundColor"),
-        ("bg_image", "BackgroundImage"),
-        ("bg_position", "BackgroundPosition"),
-        ("bg_repeat", "BackgroundRepeat"),
-        ("bg_size", "BackgroundSize"),
-        ("w", "Width"),
-        ("h", "Height"),
-        ("min_h", "MinHeight"),
-        ("min_w", "MinWidth"),
-        ("max_h", "MaxHeight"),
-        ("max_w", "MaxWidth"),
-        ("pos", "Position"),
-        ("radius", "BorderRadius"),
-    ]);
+    // generate_short_f_names!([
+    //     ("m", "Margin"),
+    //     ("ml", "MarginLeft"),
+    //     ("mr", "MarginRight"),
+    //     ("mt", "MarginTop"),
+    //     ("mb", "MarginBottom"),
+    //     ("p", "Padding"),
+    //     ("pl", "PaddingLeft"),
+    //     ("pr", "PaddingRight"),
+    //     ("pt", "PaddingTop"),
+    //     ("pb", "PaddingBottom"),
+    //     ("b_width", "BorderWidth"),
+    //     ("bl_width", "BorderLeftWidth"),
+    //     ("br_width", "BorderRightWidth"),
+    //     ("bt_width", "BorderTopWidth"),
+    //     ("bb_width", "BorderBottomWidth"),
+    //     ("b_color", "BorderColor"),
+    //     ("bl_color", "BorderLeftColor"),
+    //     ("br_color", "BorderRightColor"),
+    //     ("bt_color", "BorderTopColor"),
+    //     ("bb_color", "BorderBottomColor"),
+    //     ("b_style", "BorderStyle"),
+    //     ("bl_style", "BorderLeftStyle"),
+    //     ("br_style", "BorderRightStyle"),
+    //     ("bt_style", "BorderTopStyle"),
+    //     ("bb_style", "BorderBottomStyle"),
+    //     ("bg_color", "BackgroundColor"),
+    //     ("bg_image", "BackgroundImage"),
+    //     ("bg_position", "BackgroundPosition"),
+    //     ("bg_repeat", "BackgroundRepeat"),
+    //     ("bg_size", "BackgroundSize"),
+    //     ("w", "Width"),
+    //     ("h", "Height"),
+    //     ("min_h", "MinHeight"),
+    //     ("min_w", "MinWidth"),
+    //     ("max_h", "MaxHeight"),
+    //     ("max_w", "MaxWidth"),
+    //     ("pos", "Position"),
+    //     ("radius", "BorderRadius"),
+    // ]);
 
     //
     // Display

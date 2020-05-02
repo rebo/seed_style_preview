@@ -4,25 +4,25 @@ use super::measures::*;
 // Sizes
 use crate::style::{Style, UpdateStyle};
 
-impl<T> UpdateStyle<T> for ExactLength
-where
-    ExactLength: Into<T>,
-    T: UpdateStyle<T>,
-{
-    fn update_style(self, style: &Style) -> Style {
-        self.into().update_style(style)
-    }
-}
+// impl<T> UpdateStyle<T> for ExactLength
+// where
+//     ExactLength: Into<T>,
+//     T: UpdateStyle,
+// {
+//     fn update_style(self, style: &Style) -> Style {
+//         self.into().update_style(style)
+//     }
+// }
 
-impl<T> UpdateStyle<T> for Percent
-where
-    Percent: Into<T>,
-    T: UpdateStyle<T>,
-{
-    fn update_style(self, style: &Style) -> Style {
-        self.into().update_style(style)
-    }
-}
+// impl UpdateStyle for Percent
+// where
+//     Percent: Into<T>,
+//     T: UpdateStyle,
+// {
+//     fn update_style(self, style: &Style) -> Style {
+//         self.into().update_style(style)
+//     }
+// }
 
 impl From<ExactLength> for CssSize {
     fn from(length: ExactLength) -> Self {

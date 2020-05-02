@@ -22,11 +22,12 @@ use syn::{Lit, Meta, MetaNameValue};
 /// then `padding_auto()` will be generated on Style.
 //  if short_prop attribute is set, then that will be set too
 //  i.e. `p_auto()`
-#[proc_macro_derive(CssStyleMacro, attributes(short_prop))]
+#[proc_macro_derive(CssStyleMacro, attributes(short_prop, css_base_type))]
 pub fn expand(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let mut short_prop: Option<String> = None;
+    let mut css_base_type: Option<String> = None;
 
     // Iterate over the struct's #[...] attributes
     for option in input.attrs.into_iter() {
@@ -40,11 +41,19 @@ pub fn expand(input: TokenStream) -> TokenStream {
                     short_prop = Some(lit.value());
                 }
             }
+            Meta::NameValue(MetaNameValue {
+                ref path, ref lit, ..
+            }) if path.is_ident("css_base_type") => {
+                if let Lit::Str(lit) = lit {
+                    css_base_type = Some(lit.value());
+                }
+            }
             _ => {}
         }
     }
 
     let short_prop = short_prop.clone();
+    let css_base_type = css_base_type.clone();
 
     let css_type_name = input.ident.clone();
     let variant_ident = format_ident!(
@@ -58,58 +67,94 @@ pub fn expand(input: TokenStream) -> TokenStream {
     let snake_case_type = variant_ident.to_string().to_snake_case();
     let snake_case_type_ident = format_ident!("{}", snake_case_type);
 
-    let base_impl_quote = quote!(
+    let base_impl_quote = if let Some(short_prop) = short_prop.clone() {
+        let short_snake_case_type_ident = format_ident!("{}", short_prop);
+        quote!(
 
-        #[track_caller]
-        fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name> {
-            val.update_style(self)
-         }
+            #[track_caller]
+            fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name>{
+                val.update_style::<#css_type_name>(self)
+             }
 
-    );
+             #[track_caller]
+            fn #short_snake_case_type_ident<T>(&self, val:T) -> Style  where T:  UpdateStyle<#css_type_name> {
+                self.#snake_case_type_ident(val)
+            }
 
-    let inner_quote = quote! {
-        fn update_style(self, style: &Style)-> Style {
-            with_themes( |borrowed_themes| {
-                let mut new_style = style.clone();
-                for (i, style_val) in &mut self.iter().cloned().map(|v| v.into()).enumerate() {
-                    if let Some(breakpoint) = borrowed_themes.iter().find_map( |theme| theme.media_bp_scale.get(i) ){
-                        new_style.updated_at.push(format!("{}", Location::caller()));
-                        let rules = new_style.media_rules.entry(breakpoint.0.clone()).or_insert(vec![]);
-                        rules.push(Rule{value:Box::new(style_val.clone())})
-                    }
-                }
-                new_style
-            })
-        }
+        )
+    } else {
+        quote!(
+            #[track_caller]
+            fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name>{
+                val.update_style::<#css_type_name>(self)
+             }
+        )
     };
 
+    let base_defn_quote = if let Some(short_prop) = short_prop.clone() {
+        let short_snake_case_type_ident = format_ident!("{}", short_prop);
+        quote!(
+
+            #[track_caller]
+            fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name>;
+
+             #[track_caller]
+             fn #short_snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name>;
+        )
+    } else {
+        quote!(
+            #[track_caller]
+            fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name>;
+
+        )
+    };
+
+    // let inner_quote = quote! {
+    //     fn update_style(self, style: &Style)-> Style {
+    //         with_themes( |borrowed_themes| {
+    //             let mut new_style = style.clone();
+    //             for (i, style_val) in &mut self.iter().cloned().map(|v| v.into()).enumerate() {
+    //                 if let Some(breakpoint) = borrowed_themes.iter().find_map( |theme| theme.media_bp_scale.get(i) ){
+    //                     new_style.updated_at.push(format!("{}", Location::caller()));
+    //                     let rules = new_style.media_rules.entry(breakpoint.0.clone()).or_insert(vec![]);
+    //                     rules.push(Rule{value:Box::new(style_val.clone())})
+    //                 }
+    //             }
+    //             new_style
+    //         })
+    //     }
+    // };
+
     let update_style_quote = quote! {
-        impl CssValueTrait for #css_type_name{}
 
-    impl UpdateStyle<#css_type_name> for #css_type_name {
-        fn update_style(self, style: &Style)-> Style{
-            let val : #css_type_name = self.into();
+    //     impl OtherCssValueTrait for #css_type_name {
+    //         fn create_from_str(val: &str) -> Self {
+    //             // #css_type_name::StringValue(val.to_string())
+    //             val.into()
+    //         }
+    //         fn create_from_theme_key<B, Th>(val: Th) -> Self
+    //         where
+    //             Th: ThemeKey + Into<B>,
+    //     B: Into<Self>,
+    //     Self: Sized{
+    //             let val : B = val.into();
+    //             val.into()
+    //         }
+    //     }
+    impl OtherCssValueTrait for #css_type_name {}
+    impl CssValueTrait for #css_type_name{}
 
-
-
+    impl UpdateStyle<#css_type_name> for #css_type_name  {
+        type BaseType = ();
+        fn update_style<S>(self, style: &Style) -> Style
+        where
+            S: OtherCssValueTrait + CssValueTrait{
             let mut new_style =  style.clone();
             new_style.updated_at.push(format!("{}", Location::caller()));
-            new_style.add_rule(Box::new(val));
+            new_style.add_rule(Box::new(self));
             new_style
         }
     }
-
-    impl UpdateStyle<#css_type_name> for &str {
-        fn update_style(self, style: &Style)-> Style{
-            let mut new_style =  style.clone();
-            let val : #css_type_name = self.into();
-            new_style.updated_at.push(format!("{}", Location::caller()));
-            new_style.add_rule(Box::new(val));
-            new_style
-        }
-    }
-
-
 
     impl From<&str> for #css_type_name where {
         fn from(v: &str) -> Self {
@@ -117,7 +162,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
         }
     }
 
-    impl <R>UpdateStyle<#css_type_name> for &Vec<R> where R:Into<#css_type_name> + Clone{#inner_quote }
+    // impl <R>UpdateStyle<#css_type_name> for &Vec<R> where R:Into<#css_type_name> + Clone{#inner_quote }
     // impl <R>UpdateStyle<#css_type_name> for &[R;1] where R:Into<#css_type_name> + Clone{#inner_quote }
     // impl <R>UpdateStyle<#css_type_name> for &[R;2] where R:Into<#css_type_name> + Clone{#inner_quote }
     // impl <R>UpdateStyle<#css_type_name> for &[R;3] where R:Into<#css_type_name> + Clone{#inner_quote }
@@ -191,8 +236,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
                 #func_impls_defn
                 )*
 
-                #[track_caller]
-                fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name> ;
+                #base_defn_quote
                 // fn #snake_case_type_ident(&self) -> Style;
             }
         };
@@ -251,7 +295,6 @@ pub fn expand(input: TokenStream) -> TokenStream {
             });
 
         let trait_impl = quote! {
-
             impl #trait_name_ident for Style {
                 #(#func_impls)*
                 #base_impl_quote
@@ -270,23 +313,21 @@ pub fn expand(input: TokenStream) -> TokenStream {
         } else {
             let exp = quote! {
                     pub trait #trait_name_ident {
-                        #[track_caller]
-                        fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name> ;
+                       #base_defn_quote
                     }
-
 
                 impl #trait_name_ident for Style {
                     #base_impl_quote
                 }
                     #update_style_quote
             };
+
             exp.into()
         }
     } else {
         let exp = quote! {
             pub trait #trait_name_ident {
-                #[track_caller]
-                fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name> ;
+                #base_defn_quote
             }
 
 
@@ -333,7 +374,8 @@ pub fn generate_short_f_names(input: TokenStream) -> TokenStream {
                 {
                     let short_name_ident = format_ident!("{}", short_name.value());
                     let long_name_ident = format_ident!("Css{}", long_name.value());
-
+                    let long_accessor_name_ident =
+                        format_ident!("{}", long_name.value().to_snake_case());
                     let variant_name = format_ident!("{}", long_name.value());
 
                     let expanded = quote! {
@@ -341,13 +383,10 @@ pub fn generate_short_f_names(input: TokenStream) -> TokenStream {
 
 
                        #[track_caller]
-                       pub fn #short_name_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#long_name_ident> {
-                           val.update_style(self)
+                       pub fn #short_name_ident<T>(&self, val:T) -> Style  where T: UpdateStyle {
+                        //    val.update_style::<#long_name_ident, #css_base_type_name>(self)
+                        #long_accessor_name_ident(val)
                        }
-
-
-
-
 
                     };
 
@@ -590,11 +629,22 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                             }
                         }
 
-                        impl<Th> UpdateStyle<#specific_ident> for Th
-                            where Th: #themeid_ident + 'static {
-                            fn update_style(self, style: &Style)-> Style{
-                                let val : #specific_ident = self.into();
+                        impl <Th>UpdateStyle<#specific_ident> for Th
+                            where Th: #themeid_ident + 'static + Into<#generic_ident>  {
+                                type BaseType = #generic_ident;
+                                // BaseType = ();
+
+                                fn update_style<S>(self, style: &Style) -> Style
+                                where
+                                    S: OtherCssValueTrait + CssValueTrait {
+
+
                                 let mut new_style =  style.clone();
+
+                                let val : #generic_ident = self.into();
+
+                                let val : #specific_ident = val.into();
+
                                 new_style.updated_at.push(format!("{}", Location::caller()));
                                 new_style.add_rule(Box::new(val));
                                 new_style
@@ -602,43 +652,45 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         }
 
 
-                        impl <Th>UpdateStyle<#specific_ident> for (Th, #specific_ident)
-                                where Th: #themeid_ident + 'static {
-                                fn update_style(self, style: &Style)-> Style{
-                                    let val : #specific_ident = self.into();
-                                    let mut new_style =  style.clone();
-                                    new_style.updated_at.push(format!("{}", Location::caller()));
-                                    new_style.add_rule(Box::new(val));
-                                    new_style
-                                }
-                            }
+                        // impl <Th>UpdateStyle<#specific_ident> for (Th, #specific_ident)
+                        //         where Th: #themeid_ident + 'static {
+                        //             fn update_style<S>(self, style: &Style) -> Style
+                        //             where
+                        //                 S: OtherCssValueTrait + CssValueTrait{
+                        //             let val : #specific_ident = self.into();
+                        //             let mut new_style =  style.clone();
+                        //             new_style.updated_at.push(format!("{}", Location::caller()));
+                        //             new_style.add_rule(Box::new(val));
+                        //             new_style
+                        //         }
+                        //     }
 
-                        impl UpdateStyle<#specific_ident> for usize {
-                            fn update_style(self, style: &Style)-> Style {
+                    //     impl UpdateStyle<#specific_ident> for usize {
+                    //         fn update_style(self, style: &Style)-> Style {
 
-                                 with_themes( |borrowed_themes| {
+                    //              with_themes( |borrowed_themes| {
 
-                                    let theme_value : #specific_ident =
-                                        if let Some(theme_value) = borrowed_themes.iter().find_map( |theme| theme.#theme_scale_ident.get(self) ){
-                                            theme_value.clone().into()
+                    //                 let theme_value : #specific_ident =
+                    //                     if let Some(theme_value) = borrowed_themes.iter().find_map( |theme| theme.#theme_scale_ident.get(self) ){
+                    //                         theme_value.clone().into()
 
-                                        } else {
+                    //                     } else {
 
-                                            panic!("Theme scale does not exist {}", #theme_scale_string )
+                    //                         panic!("Theme scale does not exist {}", #theme_scale_string )
 
-                                        };
+                    //                     };
 
-                                    let mut new_style =  style.clone();
-                                    new_style.updated_at.push(format!("{}", Location::caller()));
-                                    new_style.add_rule(Box::new(theme_value));
-                                    new_style
-                                 })
-                            }
-                    }
+                    //                 let mut new_style =  style.clone();
+                    //                 new_style.updated_at.push(format!("{}", Location::caller()));
+                    //                 new_style.add_rule(Box::new(theme_value));
+                    //                 new_style
+                    //              })
+                    //         }
+                    // }
 
                             };
 
-                    // println!("{}",expanded);
+                    println!("{}", expanded);
                     exp = quote! {
                         #exp
                         #expanded
