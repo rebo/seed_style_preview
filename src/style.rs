@@ -17,6 +17,14 @@ pub use measures::*;
 mod theme;
 pub use theme::*;
 
+pub mod composition;
+pub mod helpers;
+pub mod layout;
+
+pub use composition::*;
+pub use helpers::*;
+pub use layout::*;
+
 pub mod presets;
 pub use presets::style_presets;
 pub use presets::*;
@@ -114,6 +122,7 @@ where
         new_style
     }
 }
+
 impl<R, P> UpdateStyle<P> for &[R]
 where
     R: Into<P> + Clone,
@@ -122,21 +131,38 @@ where
     fn update_style(self, style: &Style) -> Style {
         with_themes(|borrowed_themes| {
             let mut new_style = style.clone();
-            for (i, style_val) in &mut self.iter().cloned().map(|v| v.into()).enumerate() {
-                if let Some(breakpoint) = borrowed_themes
-                    .iter()
-                    .find_map(|theme| theme.media_bp_scale.get(i))
-                {
-                    new_style.updated_at.push(format!("{}", Location::caller()));
-                    let rules = new_style
-                        .media_rules
-                        .entry(breakpoint.0.clone())
-                        .or_insert(vec![]);
-                    rules.push(Rule {
-                        value: Box::new(style_val.clone()),
-                    })
+            new_style.updated_at.push(format!("{}", Location::caller()));
+
+            if let Some(bp_scale) = &borrowed_themes.iter().find_map(|theme| {
+                if !theme.media_bp_scale.is_empty() {
+                    Some(theme.media_bp_scale.clone())
+                } else {
+                    None
                 }
+            }) {
+                let mut old_style = None;
+
+                for (style_idx, bp) in bp_scale.iter().enumerate() {
+                    if let Some(item) = self.get(style_idx) {
+                        let specific_value: P = item.clone().into();
+
+                        let rules = new_style.media_rules.entry(bp.clone().0).or_insert(vec![]);
+                        rules.push(Rule {
+                            value: Box::new(specific_value.clone()),
+                        });
+
+                        old_style = Some(specific_value);
+                    } else {
+                        let rules = new_style.media_rules.entry(bp.clone().0).or_insert(vec![]);
+                        rules.push(Rule {
+                            value: Box::new(old_style.clone().unwrap()),
+                        });
+                    }
+                }
+            } else {
+                panic!("No breakpoints have been defined!")
             }
+
             new_style
         })
     }
@@ -255,51 +281,6 @@ impl Style {
 
         self.margin_top(pt).margin_bottom(pb)
     }
-
-    // generate_short_f_names!([
-    //     ("m", "Margin"),
-    //     ("ml", "MarginLeft"),
-    //     ("mr", "MarginRight"),
-    //     ("mt", "MarginTop"),
-    //     ("mb", "MarginBottom"),
-    //     ("p", "Padding"),
-    //     ("pl", "PaddingLeft"),
-    //     ("pr", "PaddingRight"),
-    //     ("pt", "PaddingTop"),
-    //     ("pb", "PaddingBottom"),
-    //     ("b_width", "BorderWidth"),
-    //     ("bl_width", "BorderLeftWidth"),
-    //     ("br_width", "BorderRightWidth"),
-    //     ("bt_width", "BorderTopWidth"),
-    //     ("bb_width", "BorderBottomWidth"),
-    //     ("b_color", "BorderColor"),
-    //     ("bl_color", "BorderLeftColor"),
-    //     ("br_color", "BorderRightColor"),
-    //     ("bt_color", "BorderTopColor"),
-    //     ("bb_color", "BorderBottomColor"),
-    //     ("b_style", "BorderStyle"),
-    //     ("bl_style", "BorderLeftStyle"),
-    //     ("br_style", "BorderRightStyle"),
-    //     ("bt_style", "BorderTopStyle"),
-    //     ("bb_style", "BorderBottomStyle"),
-    //     ("bg_color", "BackgroundColor"),
-    //     ("bg_image", "BackgroundImage"),
-    //     ("bg_position", "BackgroundPosition"),
-    //     ("bg_repeat", "BackgroundRepeat"),
-    //     ("bg_size", "BackgroundSize"),
-    //     ("w", "Width"),
-    //     ("h", "Height"),
-    //     ("min_h", "MinHeight"),
-    //     ("min_w", "MinWidth"),
-    //     ("max_h", "MaxHeight"),
-    //     ("max_w", "MaxWidth"),
-    //     ("pos", "Position"),
-    //     ("radius", "BorderRadius"),
-    // ]);
-
-    //
-    // Display
-    //
 
     #[track_caller]
     pub fn add_style<T>(&self, val: T) -> Style

@@ -1,5 +1,5 @@
 use crate::style::css_values::*;
-use crate::style::{Style, UpdateStyle};
+use crate::style::{CssValueTrait, Rule, Style, UpdateStyle};
 use anymap::any::Any;
 use seed::{prelude::*, *};
 use seed_style_macros::generate_froms;
@@ -1425,7 +1425,7 @@ where
                 empty![]
             }
         }
-        (lower, None) => content(),
+        (_lower, None) => content(),
     }
 }
 

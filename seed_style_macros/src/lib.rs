@@ -281,14 +281,6 @@ pub fn expand(input: TokenStream) -> TokenStream {
             .map(|v| {
                 let f_big_name = v.ident.clone();
                 let snake_case_variant = v.ident.clone().to_string().to_snake_case();
-                let value_variant_name = format_ident!(
-                    "{}",
-                    css_type_name
-                        .clone()
-                        .to_string()
-                        .trim_start_matches("Css")
-                        .to_string()
-                );
                 // let snake_case_type = value_variant_name.clone().to_string().to_snake_case();
 
                 let f_small_name = format_ident!("{}_{}", snake_case_type, snake_case_variant);
@@ -623,53 +615,34 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                     let themeid_ident = format_ident!("{}", theme_ids.value());
                     let generic_ident = format_ident!("{}", generic_type_names.value());
                     let specific_ident = format_ident!("{}", specific_type_names.value());
-                    let variant_ident = format_ident!(
-                        "{}",
-                        specific_type_names
-                            .clone()
-                            .value()
-                            .trim_start_matches("Css")
-                            .to_string()
-                    );
+
                     let theme_scale_ident = format_ident!("{}", theme_scale.value());
                     let theme_scale_string = theme_scale.value();
                     let expanded = quote! {
 
 
-                        impl <T> From<T> for #specific_ident where T:#themeid_ident + 'static{
-                            fn from(v: T) -> Self {
-                                with_themes( |borrowed_themes| {
-                                borrowed_themes.iter().find_map( |theme| theme.get::<T,#generic_ident>(v.clone())).unwrap().into()
-                                })
-                            }
-                        }
-
-                        impl <T>From<(T,#specific_ident)> for #specific_ident where T: #themeid_ident + 'static {
-                            fn from(v:(T,#specific_ident)) -> Self {
-                                with_themes( |borrowed_themes| {
-
-                                if let Some(theme_value) = borrowed_themes.iter().find_map( |theme| theme.get::<T,#generic_ident>(v.0.clone())){
-                                    theme_value.clone().into()
-                                } else {
-                                    v.1.clone().into()
+                            impl <T> From<T> for #specific_ident where T:#themeid_ident + 'static{
+                                fn from(v: T) -> Self {
+                                    with_themes( |borrowed_themes| {
+                                    borrowed_themes.iter().find_map( |theme| theme.get::<T,#generic_ident>(v.clone())).unwrap().into()
+                                    })
                                 }
-                                })
                             }
-                        }
 
-                        impl<Th> UpdateStyle<#specific_ident> for Th
-                            where Th: #themeid_ident + 'static {
-                            fn update_style(self, style: &Style)-> Style{
-                                let val : #specific_ident = self.into();
-                                let mut new_style =  style.clone();
-                                new_style.updated_at.push(format!("{}", Location::caller()));
-                                new_style.add_rule(Box::new(val));
-                                new_style
+                            impl <T>From<(T,#specific_ident)> for #specific_ident where T: #themeid_ident + 'static {
+                                fn from(v:(T,#specific_ident)) -> Self {
+                                    with_themes( |borrowed_themes| {
+
+                                    if let Some(theme_value) = borrowed_themes.iter().find_map( |theme| theme.get::<T,#generic_ident>(v.0.clone())){
+                                        theme_value.clone().into()
+                                    } else {
+                                        v.1.clone().into()
+                                    }
+                                    })
+                                }
                             }
-                        }
 
-
-                        impl <Th>UpdateStyle<#specific_ident> for (Th, #specific_ident)
+                            impl<Th> UpdateStyle<#specific_ident> for Th
                                 where Th: #themeid_ident + 'static {
                                 fn update_style(self, style: &Style)-> Style{
                                     let val : #specific_ident = self.into();
@@ -680,32 +653,210 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                                 }
                             }
 
-                        impl UpdateStyle<#specific_ident> for usize {
-                            fn update_style(self, style: &Style)-> Style {
 
-                                 with_themes( |borrowed_themes| {
+                            impl <Th>UpdateStyle<#specific_ident> for (Th, #specific_ident)
+                                    where Th: #themeid_ident + 'static {
+                                    fn update_style(self, style: &Style)-> Style{
+                                        let val : #specific_ident = self.into();
+                                        let mut new_style =  style.clone();
+                                        new_style.updated_at.push(format!("{}", Location::caller()));
+                                        new_style.add_rule(Box::new(val));
+                                        new_style
+                                    }
+                                }
 
-                                    let theme_value : #specific_ident =
-                                        if let Some(theme_value) = borrowed_themes.iter().find_map( |theme| theme.#theme_scale_ident.get(self) ){
-                                            theme_value.clone().into()
+                            impl UpdateStyle<#specific_ident> for usize {
+                                fn update_style(self, style: &Style)-> Style {
 
-                                        } else {
+                                     with_themes( |borrowed_themes| {
 
-                                            panic!("Theme scale does not exist {}", #theme_scale_string )
+                                        let theme_value : #specific_ident =
+                                            if let Some(theme_value) = borrowed_themes.iter().find_map( |theme| theme.#theme_scale_ident.get(self) ){
+                                                theme_value.clone().into()
 
-                                        };
+                                            } else {
 
-                                    let mut new_style =  style.clone();
-                                    new_style.updated_at.push(format!("{}", Location::caller()));
-                                    new_style.add_rule(Box::new(theme_value));
-                                    new_style
-                                 })
+                                                panic!("Theme scale does not exist {}", #theme_scale_string )
+
+                                            };
+
+                                        let mut new_style =  style.clone();
+                                        new_style.updated_at.push(format!("{}", Location::caller()));
+                                        new_style.add_rule(Box::new(theme_value));
+                                        new_style
+                                     })
+                                }
+                        }
+                        impl UpdateStyle<#specific_ident> for &[usize; 1]
+                        where
+                        #specific_ident: 'static + Clone + CssValueTrait,
+                         {
+                            fn update_style(self, style: &Style) -> Style {
+                                let ref_self : &[usize] = self.as_ref();
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
                             }
-                    }
+                        }
 
-                            };
+                        impl UpdateStyle<#specific_ident> for &[usize; 2]
+                        where
+                        #specific_ident: 'static + Clone + CssValueTrait,
+                         {
+                            fn update_style(self, style: &Style) -> Style {
+                                let ref_self : &[usize] = self.as_ref();
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                            }
+                        }
 
-                    // println!("{}",expanded);
+                        impl UpdateStyle<#specific_ident> for &[usize; 3]
+                        where
+                        #specific_ident: 'static + Clone + CssValueTrait,
+                         {
+                            fn update_style(self, style: &Style) -> Style {
+                                let ref_self : &[usize] = self.as_ref();
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                            }
+                        }
+
+
+                        impl UpdateStyle<#specific_ident> for &[usize; 4]
+                        where
+                        #specific_ident: 'static + Clone + CssValueTrait,
+                         {
+                            fn update_style(self, style: &Style) -> Style {
+                                let ref_self : &[usize] = self.as_ref();
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                            }
+                        }
+
+                        impl UpdateStyle<#specific_ident> for &[usize; 5]
+                        where
+                        #specific_ident: 'static + Clone + CssValueTrait,
+                         {
+                            fn update_style(self, style: &Style) -> Style {
+                                let ref_self : &[usize] = self.as_ref();
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                            }
+                        }
+
+                        impl UpdateStyle<#specific_ident> for &[usize; 6]
+                        where
+                        #specific_ident: 'static + Clone + CssValueTrait,
+                         {
+                            fn update_style(self, style: &Style) -> Style {
+                                let ref_self : &[usize] = self.as_ref();
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                            }
+                        }
+
+                        impl UpdateStyle<#specific_ident> for &[usize; 7]
+                        where
+                        #specific_ident: 'static + Clone + CssValueTrait,
+                         {
+                            fn update_style(self, style: &Style) -> Style {
+                                let ref_self : &[usize] = self.as_ref();
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                            }
+                        }
+
+
+                        impl UpdateStyle<#specific_ident> for &[usize; 8]
+                        where
+                        #specific_ident: 'static + Clone + CssValueTrait,
+                         {
+                            fn update_style(self, style: &Style) -> Style {
+                                let ref_self : &[usize] = self.as_ref();
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                            }
+                        }
+
+                        impl UpdateStyle<#specific_ident> for &[usize; 9]
+                        where
+                        #specific_ident: 'static + Clone + CssValueTrait,
+                         {
+                            fn update_style(self, style: &Style) -> Style {
+                                let ref_self : &[usize] = self.as_ref();
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                            }
+                        }
+
+
+                        impl UpdateStyle<#specific_ident> for &[usize; 10]
+                        where
+                        #specific_ident: 'static + Clone + CssValueTrait,
+                         {
+                            fn update_style(self, style: &Style) -> Style {
+                                let ref_self : &[usize] = self.as_ref();
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                            }
+                        }
+
+
+
+
+
+                        impl UpdateStyle<#specific_ident> for &[usize] where
+                        #specific_ident: 'static + Clone + CssValueTrait,{
+                            fn update_style(self, style: &Style)-> Style {
+                                with_themes( |borrowed_themes| {
+
+                                    let mut new_style = style.clone();
+                                    new_style.updated_at.push(format!("{}", Location::caller()));
+
+                                    if let Some(bp_scale) = &borrowed_themes.iter().find_map(|theme| if !theme.media_bp_scale.is_empty() { Some(theme.media_bp_scale.clone())} else { None }) {
+
+
+                                        let mut old_style = None;
+
+                                        for (style_idx, bp) in bp_scale.iter().enumerate(){
+                                            if let Some(theme_idx) = self.get(style_idx){
+                                            if let Some(generic_value )= borrowed_themes
+                                                .iter()
+                                                .find_map( |theme| theme.#theme_scale_ident.get(*theme_idx)).cloned(){
+
+                                                    let specific_value : #specific_ident = generic_value.into();
+
+                                                    let rules = new_style
+                                                                    .media_rules
+                                                                    .entry(bp.clone().0)
+                                                                    .or_insert(vec![]);
+                                                    rules.push(Rule {
+                                                        value: Box::new(specific_value.clone()),
+                                                    });
+
+                                                    old_style = Some(specific_value);
+                                                }else {
+                                                    panic!("No theme scale for that index!")
+                                                }
+
+                                            } else {
+                                                    let rules = new_style
+                                                        .media_rules
+                                                        .entry(bp.clone().0)
+                                                        .or_insert(vec![]);
+                                                        rules.push(Rule {
+                                                            value: Box::new(old_style.clone().unwrap()),
+                                                        });
+
+                                                }
+
+
+                                        }
+                                    } else {
+                                        panic!("No breakpoints have been defined!")
+
+                                    }
+                                    new_style
+
+
+
+                                })
+
+                            }
+                        }
+
+                    };
+
+                    // println!("{}", expanded);
                     exp = quote! {
                         #exp
                         #expanded

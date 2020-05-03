@@ -1,284 +1,8 @@
 use super::measures::*;
-use crate::style::theme::with_themes;
-use crate::style::CssValueTrait;
-use crate::style::Rule;
-use crate::style::Style;
-use crate::style::UpdateStyle;
+use crate::style::{CssValueTrait, Style, UpdateStyle};
 use derive_more::Display;
 use seed_style_macros::{create_enums, CssStyleMacro};
 use std::panic::Location;
-
-#[derive(Display, Clone, Debug)]
-pub enum CssValue {
-    // Themeable and shared s, i.e. Color is used for all Css color properties
-    Color(CssColor),
-    Size(CssSize),
-    Space(CssSpace),
-    Height(CssHeight),
-    MinHeight(CssMinHeight),
-    MinWidth(CssMinWidth),
-    MaxHeight(CssMaxHeight),
-    MaxWidth(CssMaxWidth),
-    Transition(CssTransition),
-    LineHeight(CssLineHeight),
-    LetterSpacing(CssLetterSpacing),
-    BorderRadius(CssBorderRadius),
-    Stroke(CssStroke),
-    BorderTopRightRadius(CssBorderTopRightRadius),
-    BorderTopLeftRadius(CssBorderTopLeftRadius),
-    BorderBottomRightRadius(CssBorderBottomRightRadius),
-    BorderBottomLeftRadius(CssBorderBottomLeftRadius),
-    Font(CssFont),
-    FontSize(CssFontSize),
-    ZIndex(CssZIndex),
-    // Back up for any property value not covered
-    StringValue(String),
-    // 'Single Property s, those values that apply to one property only.
-    FontFamily(CssFontFamily),
-    Display(CssDisplay),
-    AlignContent(CssAlignContent),
-    AlignItems(CssAlignItems),
-    AlignSelf(CssAlignSelf),
-    AnimationDelay(CssAnimationDelay),
-    AnimationDirection(CssAnimationDirection),
-    AnimationDuration(CssAnimationDuration),
-    AnimationFillMode(CssAnimationFillMode),
-    AnimationIterationCount(CssAnimationIterationCount),
-    AnimationName(CssAnimationName),
-    AnimationPlayState(CssAnimationPlayState),
-    AnimationTimingFunction(CssAnimationTimingFunction),
-    Animation(CssAnimation),
-    BackfaceVisibility(CssBackfaceVisibility),
-    Background(CssBackground),
-    BackgroundAttachment(CssBackgroundAttachment),
-    BackgroundBlendMode(CssBackgroundBlendMode),
-    BackgroundClip(CssBackgroundClip),
-    BackgroundColor(CssBackgroundColor),
-    BackgroundImage(CssBackgroundImage),
-    BackgroundOrigin(CssBackgroundOrigin),
-    BackgroundPosition(CssBackgroundPosition),
-    JustifyItems(CssJustifyItems),
-    JustifySelf(CssJustifySelf),
-    BackgroundRepeat(CssBackgroundRepeat),
-    BackgroundSize(CssBackgroundSize),
-    BorderCollapse(CssBorderCollapse),
-    BorderImage(CssBorderImage),
-    BorderImageOutset(CssBorderImageOutset),
-    BorderImageRepeat(CssBorderImageRepeat),
-    BorderImageSlice(CssBorderImageSlice),
-    BorderImageSource(CssBorderImageSource),
-    BorderImageWidth(CssBorderImageWidth),
-    Bottom(CssBottom),
-    BoxDecorationBreak(CssBoxDecorationBreak),
-    BoxShadow(CssBoxShadow),
-    BoxSizing(CssBoxSizing),
-    BreakAfter(CssBreakAfter),
-    BreakBefore(CssBreakBefore),
-    BreakInside(CssBreakInside),
-    CaptionSide(CssCaptionSide),
-    CaretColor(CssCaretColor),
-    Clear(CssClear),
-    Clip(CssClip),
-    ClipPath(CssClipPath),
-    ColumnCount(CssColumnCount),
-    ColumnFill(CssColumnFill),
-    ColumnGap(CssColumnGap),
-    ColumnRule(CssColumnRule),
-    ColumnRuleColor(CssColumnRuleColor),
-    ColumnRuleStyle(CssColumnRuleStyle),
-    ColumnRuleWidth(CssColumnRuleWidth),
-    ColumnSpan(CssColumnSpan),
-    ColumnWidth(CssColumnWidth),
-    Columns(CssColumns),
-    Content(CssContent),
-    CounterIncrement(CssCounterIncrement),
-    CounterReset(CssCounterReset),
-    Cursor(CssCursor),
-    Direction(CssDirection),
-    EmptyCells(CssEmptyCells),
-    Filter(CssFilter),
-    Flex(CssFlex),
-    FlexBasis(CssFlexBasis),
-    FlexDirection(CssFlexDirection),
-    FlexFlow(CssFlexFlow),
-    FlexGrow(CssFlexGrow),
-    FlexShrink(CssFlexShrink),
-    FlexWrap(CssFlexWrap),
-    Float(CssFloat),
-    FontWeight(CssFontWeight),
-    FontFeatureSettings(CssFontFeatureSettings),
-    FontKerning(CssFontKerning),
-    FontLanguageOverride(CssFontLanguageOverride),
-    FontSizeAdjust(CssFontSizeAdjust),
-    FontStretch(CssFontStretch),
-    FontStyle(CssFontStyle),
-    FontSynthesis(CssFontSynthesis),
-    FontVariant(CssFontVariant),
-    FontVariantAlternates(CssFontVariantAlternates),
-    FontVariantCaps(CssFontVariantCaps),
-    FontVariantEastAsian(CssFontVariantEastAsian),
-    FontVariantLigatures(CssFontVariantLigatures),
-    FontVariantNumeric(CssFontVariantNumeric),
-    FontVariantPosition(CssFontVariantPosition),
-    Grid(CssGrid),
-    Gap(CssGap),
-    RowGap(CssRowGap),
-    GridGap(CssGridGap),
-    GridRowGap(CssGridRowGap),
-    GridArea(CssGridArea),
-    GridAutoColumns(CssGridAutoColumns),
-    GridAutoFlow(CssGridAutoFlow),
-    GridAutoRows(CssGridAutoRows),
-    GridColumn(CssGridColumn),
-    GridColumnEnd(CssGridColumnEnd),
-    GridColumnGap(CssGridColumnGap),
-    GridColumnStart(CssGridColumnStart),
-    GridRow(CssGridRow),
-    GridRowEnd(CssGridRowEnd),
-    GridRowStart(CssGridRowStart),
-    GridTemplate(CssGridTemplate),
-    GridTemplateAreas(CssGridTemplateAreas),
-    GridTemplateColumns(CssGridTemplateColumns),
-    GridTemplateRows(CssGridTemplateRows),
-    Hyphens(CssHyphens),
-    ImageRendering(CssImageRendering),
-    Isolation(CssIsolation),
-    JustifyContent(CssJustifyContent),
-    Left(CssLeft),
-    ListStyleImage(CssListStyleImage),
-    ListStylePosition(CssListStylePosition),
-    ListStyleType(CssListStyleType),
-    ListStyle(CssListStyle),
-    PageBreak(CssPageBreak),
-    LineBreak(CssLineBreak),
-    Mask(CssMask),
-    MaskType(CssMaskType),
-    MixBlendMode(CssMixBlendMode),
-    ObjectFit(CssObjectFit),
-    ObjectPosition(CssObjectPosition),
-    Opacity(CssOpacity),
-    Order(CssOrder),
-    Orphans(CssOrphans),
-    Overflow(CssOverflow),
-    OverflowWrap(CssOverflowWrap),
-    OverflowX(CssOverflowX),
-    OverflowY(CssOverflowY),
-    PageBreakAfter(CssPageBreakAfter),
-    PageBreakBefore(CssPageBreakBefore),
-    PageBreakInside(CssPageBreakInside),
-    Perspective(CssPerspective),
-    PerspectiveOrigin(CssPerspectiveOrigin),
-    PlaceContent(CssPlaceContent),
-    PointerEvents(CssPointerEvents),
-    Position(CssPosition),
-    Quotes(CssQuotes),
-    Resize(CssResize),
-    Right(CssRight),
-    ScrollBehavior(CssScrollBehavior),
-    ShapeImageThreshold(CssShapeImageThreshold),
-    ShapeMargin(CssShapeMargin),
-    TabSize(CssTabSize),
-    TableLayout(CssTableLayout),
-    TextAlign(CssTextAlign),
-    TextAlignLast(CssTextAlignLast),
-    TextCombineUpright(CssTextCombineUpright),
-    TextDecoration(CssTextDecoration),
-    TextDecorationColor(CssTextDecorationColor),
-    TextDecorationLine(CssTextDecorationLine),
-    TextDecorationStyle(CssTextDecorationStyle),
-    TextEmphasis(CssTextEmphasis),
-    TextEmphasisColor(CssTextEmphasisColor),
-    TextEmphasisPosition(CssTextEmphasisPosition),
-    TextEmphasisStyle(CssTextEmphasisStyle),
-    TextIndent(CssTextIndent),
-    TextJustify(CssTextJustify),
-    TextOrientation(CssTextOrientation),
-    TextOverflow(CssTextOverflow),
-    TextShadow(CssTextShadow),
-    TextTransform(CssTextTransform),
-    TextUnderlinePosition(CssTextUnderlinePosition),
-    Top(CssTop),
-    TouchAction(CssTouchAction),
-    Transform(CssTransform),
-    TransformOrigin(CssTransformOrigin),
-    TransformStyle(CssTransformStyle),
-    TransitionDelay(CssTransitionDelay),
-    TransitionDuration(CssTransitionDuration),
-    TransitionProperty(CssTransitionProperty),
-    TransitionTimingFunction(CssTransitionTimingFunction),
-    UnicodeBidi(CssUnicodeBidi),
-    UserSelect(CssUserSelect),
-    VerticalAlign(CssVerticalAlign),
-    Visibility(CssVisibility),
-    WhiteSpace(CssWhiteSpace),
-    Widows(CssWidows),
-    Width(CssWidth),
-    WillChange(CssWillChange),
-    WordBreak(CssWordBreak),
-    WordSpacing(CssWordSpacing),
-    WordWrap(CssWordWrap),
-    WritingMode(CssWritingMode),
-    Fill(CssFill),
-    Margin(CssMargin),
-    MarginTop(CssMarginTop),
-    MarginBottom(CssMarginBottom),
-    MarginLeft(CssMarginLeft),
-    MarginRight(CssMarginRight),
-    Padding(CssPadding),
-    PaddingTop(CssPaddingTop),
-    PaddingBottom(CssPaddingBottom),
-    PaddingLeft(CssPaddingLeft),
-    PaddingRight(CssPaddingRight),
-    Outline(CssOutline),
-    OutlineTop(CssOutlineTop),
-    OutlineBottom(CssOutlineBottom),
-    OutlineLeft(CssOutlineLeft),
-    OutlineRight(CssOutlineRight),
-    Border(CssBorder),
-    BorderTop(CssBorderTop),
-    BorderBottom(CssBorderBottom),
-    BorderLeft(CssBorderLeft),
-    BorderRight(CssBorderRight),
-    OutlineColor(CssOutlineColor),
-    OutlineTopColor(CssOutlineTopColor),
-    OutlineBottomColor(CssOutlineBottomColor),
-    OutlineLeftColor(CssOutlineLeftColor),
-    OutlineRightColor(CssOutlineRightColor),
-    BorderColor(CssBorderColor),
-    BorderTopColor(CssBorderTopColor),
-    BorderBottomColor(CssBorderBottomColor),
-    BorderLeftColor(CssBorderLeftColor),
-    BorderRightColor(CssBorderRightColor),
-    OutlineStyle(CssOutlineStyle),
-    OutlineTopStyle(CssOutlineTopStyle),
-    OutlineBottomStyle(CssOutlineBottomStyle),
-    OutlineLeftStyle(CssOutlineLeftStyle),
-    OutlineRightStyle(CssOutlineRightStyle),
-    BorderStyle(CssBorderStyle),
-    BorderTopStyle(CssBorderTopStyle),
-    BorderBottomStyle(CssBorderBottomStyle),
-    BorderLeftStyle(CssBorderLeftStyle),
-    BorderRightStyle(CssBorderRightStyle),
-    OutlineWidth(CssOutlineWidth),
-    OutlineTopWidth(CssOutlineTopWidth),
-    OutlineBottomWidth(CssOutlineBottomWidth),
-    OutlineLeftWidth(CssOutlineLeftWidth),
-    OutlineRightWidth(CssOutlineRightWidth),
-    BorderWidth(CssBorderWidth),
-    BorderTopWidth(CssBorderTopWidth),
-    BorderBottomWidth(CssBorderBottomWidth),
-    BorderLeftWidth(CssBorderLeftWidth),
-    BorderRightWidth(CssBorderRightWidth),
-}
-
-#[derive(Debug)]
-pub struct CssMedia(pub String);
-
-impl CssMedia {
-    pub fn render(&self) -> String {
-        format!("@media {}", self.0)
-    }
-}
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bg_attachment"]
@@ -2558,6 +2282,58 @@ pub enum CssBoxSizing {
     StringValue(String),
 }
 
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "display: {};")]
+pub enum CssDisplay {
+    #[display(fmt = "inline")]
+    Inline,
+    #[display(fmt = "block")]
+    Block,
+    #[display(fmt = "contents")]
+    Contents,
+    #[display(fmt = "flex")]
+    Flex,
+    #[display(fmt = "grid")]
+    Grid,
+    #[display(fmt = "inline-block")]
+    InlineBlock,
+    #[display(fmt = "inline=flex")]
+    InlineFlex,
+    #[display(fmt = "inline-grid")]
+    InlineGrid,
+    #[display(fmt = "inline-table")]
+    InlineTable,
+    #[display(fmt = "list-tem")]
+    ListItem,
+    #[display(fmt = "run-in")]
+    RunIn,
+    #[display(fmt = "table")]
+    Table,
+    #[display(fmt = "table-caption")]
+    TableCaption,
+    #[display(fmt = "table-column-group")]
+    TableColumnGroup,
+    #[display(fmt = "table-header-group")]
+    TableHeaderGroup,
+    #[display(fmt = "table-footer-group")]
+    TableFooterGroup,
+    #[display(fmt = "table-row-group")]
+    TableRowGroup,
+    #[display(fmt = "table-cell")]
+    TableCell,
+    #[display(fmt = "table-column")]
+    TableColumn,
+    #[display(fmt = "table-row")]
+    TableRow,
+    #[display(fmt = "none")]
+    None,
+    #[display(fmt = "initial")]
+    Initial,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
+
 create_enums!([
     "AnimationDelay",
     "AnimationDirection",
@@ -2676,54 +2452,11 @@ create_enums!([
     "WritingMode",
 ]);
 
-#[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "display: {};")]
-pub enum CssDisplay {
-    #[display(fmt = "inline")]
-    Inline,
-    #[display(fmt = "block")]
-    Block,
-    #[display(fmt = "contents")]
-    Contents,
-    #[display(fmt = "flex")]
-    Flex,
-    #[display(fmt = "grid")]
-    Grid,
-    #[display(fmt = "inline-block")]
-    InlineBlock,
-    #[display(fmt = "inline=flex")]
-    InlineFlex,
-    #[display(fmt = "inline-grid")]
-    InlineGrid,
-    #[display(fmt = "inline-table")]
-    InlineTable,
-    #[display(fmt = "list-tem")]
-    ListItem,
-    #[display(fmt = "run-in")]
-    RunIn,
-    #[display(fmt = "table")]
-    Table,
-    #[display(fmt = "table-caption")]
-    TableCaption,
-    #[display(fmt = "table-column-group")]
-    TableColumnGroup,
-    #[display(fmt = "table-header-group")]
-    TableHeaderGroup,
-    #[display(fmt = "table-footer-group")]
-    TableFooterGroup,
-    #[display(fmt = "table-row-group")]
-    TableRowGroup,
-    #[display(fmt = "table-cell")]
-    TableCell,
-    #[display(fmt = "table-column")]
-    TableColumn,
-    #[display(fmt = "table-row")]
-    TableRow,
-    #[display(fmt = "none")]
-    None,
-    #[display(fmt = "initial")]
-    Initial,
-    #[display(fmt = "inherit")]
-    Inherit,
-    StringValue(String),
+#[derive(Debug,Clone)]
+pub struct CssMedia(pub String);
+
+impl CssMedia {
+    pub fn render(&self) -> String {
+        format!("@media {}", self.0)
+    }
 }
