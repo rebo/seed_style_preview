@@ -410,6 +410,38 @@ pub enum CssOverflow {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "overflow-x: {};")]
+pub enum CssOverflowX {
+    #[display(fmt = "visible")]
+    Visible,
+    #[display(fmt = "hidden")]
+    Hidden,
+    #[display(fmt = "scroll")]
+    Scroll,
+    #[display(fmt = "auto")]
+    Auto,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
+
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "overflow-y: {};")]
+pub enum CssOverflowY {
+    #[display(fmt = "visible")]
+    Visible,
+    #[display(fmt = "hidden")]
+    Hidden,
+    #[display(fmt = "scroll")]
+    Scroll,
+    #[display(fmt = "auto")]
+    Auto,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
+
+#[derive(Display, Clone, Debug, CssStyleMacro)]
 #[display(fmt = "page-break: {};")]
 pub enum CssPageBreak {
     #[display(fmt = "auto")]
@@ -705,53 +737,53 @@ pub enum CssSpace {
     StringValue(String),
 }
 
-#[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "top: {};")]
-pub enum CssTop {
-    Length(ExactLength),
-    Percentage(Percent),
-    #[display(fmt = "auto")]
-    Auto,
-    #[display(fmt = "inherit")]
-    Inherit,
-    StringValue(String),
-}
+// #[derive(Display, Clone, Debug, CssStyleMacro)]
+// #[display(fmt = "top: {};")]
+// pub enum CssTop {
+//     Length(ExactLength),
+//     Percentage(Percent),
+//     #[display(fmt = "auto")]
+//     Auto,
+//     #[display(fmt = "inherit")]
+//     Inherit,
+//     StringValue(String),
+// }
 
-#[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "bottom: {};")]
-pub enum CssBottom {
-    Length(ExactLength),
-    Percentage(Percent),
-    #[display(fmt = "auto")]
-    Auto,
-    #[display(fmt = "inherit")]
-    Inherit,
-    StringValue(String),
-}
+// #[derive(Display, Clone, Debug, CssStyleMacro)]
+// #[display(fmt = "bottom: {};")]
+// pub enum CssBottom {
+//     Length(ExactLength),
+//     Percentage(Percent),
+//     #[display(fmt = "auto")]
+//     Auto,
+//     #[display(fmt = "inherit")]
+//     Inherit,
+//     StringValue(String),
+// }
 
-#[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "left: {};")]
-pub enum CssLeft {
-    Length(ExactLength),
-    Percentage(Percent),
-    #[display(fmt = "auto")]
-    Auto,
-    #[display(fmt = "inherit")]
-    Inherit,
-    StringValue(String),
-}
+// #[derive(Display, Clone, Debug, CssStyleMacro)]
+// #[display(fmt = "left: {};")]
+// pub enum CssLeft {
+//     Length(ExactLength),
+//     Percentage(Percent),
+//     #[display(fmt = "auto")]
+//     Auto,
+//     #[display(fmt = "inherit")]
+//     Inherit,
+//     StringValue(String),
+// }
 
-#[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "right: {};")]
-pub enum CssRight {
-    Length(ExactLength),
-    Percentage(Percent),
-    #[display(fmt = "auto")]
-    Auto,
-    #[display(fmt = "inherit")]
-    Inherit,
-    StringValue(String),
-}
+// #[derive(Display, Clone, Debug, CssStyleMacro)]
+// #[display(fmt = "right: {};")]
+// pub enum CssRight {
+//     Length(ExactLength),
+//     Percentage(Percent),
+//     #[display(fmt = "auto")]
+//     Auto,
+//     #[display(fmt = "inherit")]
+//     Inherit,
+//     StringValue(String),
+// }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[display(fmt = "grid-gap: {};")]
@@ -1618,7 +1650,7 @@ pub enum CssLetterSpacing {
 #[display(fmt = "line-height: {};")]
 pub enum CssLineHeight {
     Normal,
-    Number(u32),
+    Number(f64),
     Length(ExactLength),
     Percentage(Percent),
     #[display(fmt = "inherit")]
@@ -1716,7 +1748,7 @@ pub enum CssColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:x}", _0)]
+    #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -2283,6 +2315,24 @@ pub enum CssBoxSizing {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "-webkit-font-smoothing: {};")]
+pub enum CssWebkitFontSmoothing {
+    #[display(fmt = "none")]
+    None,
+    #[display(fmt = "auto")]
+    Auto,
+    #[display(fmt = "antialiased")]
+    Antialiased,
+    #[display(fmt = "subpixel-antialiased")]
+    SubpixelAntialiased,
+    #[display(fmt = "initial")]
+    Initial,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
+
+#[derive(Display, Clone, Debug, CssStyleMacro)]
 #[display(fmt = "display: {};")]
 pub enum CssDisplay {
     #[display(fmt = "inline")]
@@ -2410,8 +2460,6 @@ create_enums!([
     "Opacity",
     "Order",
     "OverflowWrap",
-    "OverflowX",
-    "OverflowY",
     "PageBreakAfter",
     "PageBreakBefore",
     "PageBreakInside",
@@ -2452,7 +2500,7 @@ create_enums!([
     "WritingMode",
 ]);
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct CssMedia(pub String);
 
 impl CssMedia {

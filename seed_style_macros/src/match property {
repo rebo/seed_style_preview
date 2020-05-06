@@ -75,7 +75,7 @@ match property {
     FontVariantNumeric => "font-variant-numeric", 
     FontVariantPosition => "font-variant-position", 
     Grid => "grid", 
-    GridArea => "grid-area", 
+    LayoutArea => "grid-area", 
     GridAutoColumns => "grid-auto-columns", 
     GridAutoFlow => "grid-auto-flow", 
     GridAutoRows => "grid-auto-rows", 

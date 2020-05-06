@@ -8,7 +8,7 @@ use std::collections::HashMap;
 pub struct Composition<T, A, Mdl, Ms>
 where
     T: BreakpointTheme,
-    A: GridArea,
+    A: LayoutArea,
 {
     pub layouts: Vec<Layout<A>>,
     pub mocked_children: Option<(String, u32, ExactLength, ExactLength)>,
@@ -21,7 +21,7 @@ where
 impl<T, A, Mdl, Ms> Default for Composition<T, A, Mdl, Ms>
 where
     T: BreakpointTheme,
-    A: GridArea,
+    A: LayoutArea,
 {
     fn default() -> Self {
         Self {
@@ -40,7 +40,7 @@ where
     T: BreakpointTheme + 'static,
     Ms: 'static,
     Mdl: 'static,
-    A: GridArea,
+    A: LayoutArea,
 {
     pub fn with_layouts(bp_layouts: &[(T, Layout<A>)]) -> Self {
         let mut c = Composition::default();
@@ -180,29 +180,8 @@ where
                 .iter()
                 .map(|child| child(model))
                 .collect::<Vec<Node<Ms>>>(),
-            if let Some(mock) = &self.mocked_children {
-                let (name, count, width, height) = mock;
-                (0..*count)
-                    .into_iter()
-                    .map(|i| {
-                        div![
-                            S.box_sizing_border_box()
-                                .w(width.clone())
-                                .h(height.clone())
-                                .font_size(px(24))
-                                .text_align_center()
-                                .p(px(30))
-                                .border_style_dashed()
-                                .border_width(px(2))
-                                .display("flex")
-                                .align_items("center")
-                                .justify_content_center()
-                                .border_color(seed_colors::Gray::No7)
-                                .bg_color(seed_colors::Red::No4),
-                            h1![format!("Mocked {} No.{} ", name, i)]
-                        ]
-                    })
-                    .collect::<Vec<Node<Ms>>>()
+            if let Some((name, count, width, height)) = &self.mocked_children {
+                self.mocked_child(name, *count, width, height)
             } else {
                 vec![]
             }
@@ -213,7 +192,6 @@ where
         let layout = &self.layouts[idx];
 
         let number_of_columns = layout.layout.iter().map(|v| v.len()).max().unwrap();
-        // let number_of_rows = layout.layout.len();
         let one_frs = std::iter::repeat("1fr ");
         let grid_template_columns = one_frs.take(number_of_columns).collect::<String>();
 
@@ -230,9 +208,30 @@ where
                 }
             }
 
-            grid_template_areas_row.push_str("\"");
+            grid_template_areas_row.push_str("\" ");
             grid_template_areas.push_str(&grid_template_areas_row);
         }
+        let mut gtc = grid_template_columns.clone();
+        let mut gtr = "auto".to_string();
+
+        if let Some(style) = &layout.container_styles {
+            for rule in &style.rules {
+                let rule_str = format!("{}", rule.value);
+                if rule_str.contains("grid-template-columns") {
+                    gtc = rule_str
+                        .trim_start_matches("grid-template-columns: ")
+                        .trim_end_matches(";")
+                        .to_string();
+                }
+                if rule_str.contains("grid-template-rows") {
+                    gtr = rule_str
+                        .trim_start_matches("grid-template-rows: ")
+                        .trim_end_matches(";")
+                        .to_string();
+                }
+            }
+        }
+
         div![
             S.grid_template_columns(grid_template_columns.as_str())
                 .box_sizing("border_box")
@@ -255,54 +254,72 @@ where
                     if let Some(view) = self.areas_hm.get(area) {
                         view(model)
                     } else {
-                        self.mock(area.clone())
+                        self.mock(area.clone(), gtc.as_str(), gtr.as_str())
                     },
                 ]
             }),
-            if let Some(mock) = &self.mocked_children {
-                let (name, count, width, height) = mock;
-                (0..*count)
-                    .into_iter()
-                    .map(|i| {
-                        div![
-                            S.box_sizing_border_box()
-                                .w(width.clone())
-                                .h(height.clone())
-                                .font_size(px(24))
-                                .text_align_center()
-                                .p(px(30))
-                                .border_style_dashed()
-                                .border_width(px(2))
-                                .display_flex()
-                                .align_items_center()
-                                .justify_content_center()
-                                .border_color(seed_colors::Gray::No7)
-                                .bg_color(seed_colors::Red::No4),
-                            h1![format!("Mocked {} No.{} ", name, i)]
-                        ]
-                    })
-                    .collect::<Vec<Node<Ms>>>()
+            if let Some((name, count, width, height)) = &self.mocked_children {
+                self.mocked_child(name, *count, width, height)
             } else {
                 vec![]
             }
         ]
     }
 
-    pub fn mock(&self, area: A) -> Node<Ms> {
+    pub fn mock(&self, area: A, gtc: &str, gtr: &str) -> Node<Ms> {
         div![
             S.box_sizing_border_box()
-                .font_size(px(24))
                 .text_align_center()
                 .p(px(30))
                 .height(pc(100.))
                 .border_style_dashed()
                 .border_width(px(2))
                 .display_flex()
+                .flex_direction_column()
                 .align_items_center()
                 .justify_content_center()
                 .border_color(seed_colors::Gray::No7)
                 .bg_color(seed_colors::Gray::No5),
-            h1![format!("{:?} ", area).replace("::", "__")]
+            h1![
+                S.font_size(px(24)),
+                format!("{:?} ", area).replace("::", "__")
+            ],
+            p![S.color(seed_colors::Gray::No8), format!("cols: ({})", gtc)],
+            p![S.color(seed_colors::Gray::No8), format!("rows: ({})", gtr)],
         ]
+    }
+
+    pub fn mocked_child(
+        &self,
+        name: &str,
+        count: u32,
+        width: &ExactLength,
+        height: &ExactLength,
+    ) -> Vec<Node<Ms>> {
+        (0..count)
+            .into_iter()
+            .map(|i| {
+                div![
+                    S.box_sizing_border_box()
+                        .w(width.clone())
+                        .h(height.clone())
+                        .text_align_center()
+                        .p(px(30))
+                        .border_style_dashed()
+                        .border_width(px(2))
+                        .display("flex")
+                        .flex_direction_column()
+                        .align_items("center")
+                        .justify_content_center()
+                        .border_color(seed_colors::Gray::No7)
+                        .bg_color(seed_colors::Red::No4),
+                    h1![S.font_size(px(24)), format!("Mocked {} No.{} ", name, i)],
+                    p![
+                        S.color(seed_colors::Gray::No8),
+                        format!("({} × {} )", width, height)
+                    ],
+                ]
+            })
+            .collect::<Vec<Node<Ms>>>()
     }
 }

@@ -72,12 +72,19 @@ pub fn expand(input: TokenStream) -> TokenStream {
 
             #[track_caller]
             fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name> {
-                val.update_style(self)
+                let mut new_style = self.clone();
+                new_style.updated_at.push(format!("{}", Location::caller()));
+                val.update_style(&mut new_style);
+                new_style
+
              }
 
              #[track_caller]
              fn #short_prop_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name> {
-                 val.update_style(self)
+                let mut new_style = self.clone();
+                new_style.updated_at.push(format!("{}", Location::caller()));
+                 val.update_style(&mut new_style);
+                 new_style
               }
             ),
         )
@@ -93,7 +100,10 @@ pub fn expand(input: TokenStream) -> TokenStream {
 
             #[track_caller]
             fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name> {
-                val.update_style(self)
+                let mut new_style = self.clone();
+                new_style.updated_at.push(format!("{}", Location::caller()));
+                val.update_style(&mut  new_style);
+                new_style
              }
 
             ),
@@ -103,7 +113,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
     // let inner_quote = quote! {
     //     fn update_style(self, style: &Style)-> Style {
     //         with_themes( |borrowed_themes| {
-    //             let mut new_style = style.clone();
+    //             let new_style = style.clone();
     //             for (i, style_val) in &mut self.iter().cloned().map(|v| v.into()).enumerate() {
     //                 if let Some(breakpoint) = borrowed_themes.iter().find_map( |theme| theme.media_bp_scale.get(i) ){
     //                     new_style.updated_at.push(format!("{}", Location::caller()));
@@ -120,12 +130,12 @@ pub fn expand(input: TokenStream) -> TokenStream {
         impl CssValueTrait for #css_type_name{}
 
     // impl UpdateStyle<#css_type_name> for #css_type_name {
-    //     fn update_style(self, style: &Style)-> Style{
+    //     fn update_style(self, style: &mut Style)-> Style{
     //         let val : #css_type_name = self.into();
 
 
 
-    //         let mut new_style =  style.clone();
+    //         let new_style =  style.clone();
     //         new_style.updated_at.push(format!("{}", Location::caller()));
     //         new_style.add_rule(Box::new(val));
     //         new_style
@@ -133,8 +143,8 @@ pub fn expand(input: TokenStream) -> TokenStream {
     // }
 
     // impl UpdateStyle<#css_type_name> for &str {
-    //     fn update_style(self, style: &Style)-> Style{
-    //         let mut new_style =  style.clone();
+    //     fn update_style(self, style: &mut Style)-> Style{
+    //         let new_style =  style.clone();
     //         let val : #css_type_name = self.into();
     //         new_style.updated_at.push(format!("{}", Location::caller()));
     //         new_style.add_rule(Box::new(val));
@@ -288,6 +298,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
                 if let Some(short_prop) = short_prop.clone() {
                     let short_prop_ident = format_ident!("{}_{}", short_prop, snake_case_variant);
                     quote! {
+                        #[track_caller]
                         fn #short_prop_ident(&self) -> Style {
                             let mut new_style = self.clone();
 
@@ -295,7 +306,8 @@ pub fn expand(input: TokenStream) -> TokenStream {
                             new_style.add_rule(Box::new(#css_type_name :: #f_big_name));
                             new_style
                         }
-                                fn #f_small_name_ident(&self) -> Style {
+                        #[track_caller]
+                            fn #f_small_name_ident(&self) -> Style {
                             let mut new_style = self.clone();
 
                             new_style.updated_at.push(format!("{}", Location::caller()));
@@ -305,9 +317,9 @@ pub fn expand(input: TokenStream) -> TokenStream {
                     }
                 } else {
                     quote! {
+                        #[track_caller]
                         fn #f_small_name_ident(&self) -> Style {
                             let mut new_style = self.clone();
-
                             new_style.updated_at.push(format!("{}", Location::caller()));
                             new_style.add_rule(Box::new(#css_type_name :: #f_big_name));
                             new_style
@@ -483,7 +495,7 @@ pub fn generate_from_strs(input: TokenStream) -> TokenStream {
 
 // #[track_caller]
 // pub fn hover(&self) -> Style {
-//     let mut new_style = self.clone();
+//     let new_style = self.clone();
 //     new_style.updated_at.push(format!("{}", Location::caller()));
 //     new_style.pseudo = Pseudo::Hover;
 //     new_style
@@ -629,8 +641,8 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                                 }
                             }
 
-                            impl <T>From<(T,#specific_ident)> for #specific_ident where T: #themeid_ident + 'static {
-                                fn from(v:(T,#specific_ident)) -> Self {
+                            impl <T>From<(T,#generic_ident)> for #specific_ident where T: #themeid_ident + 'static {
+                                fn from(v:(T,#generic_ident)) -> Self {
                                     with_themes( |borrowed_themes| {
 
                                     if let Some(theme_value) = borrowed_themes.iter().find_map( |theme| theme.get::<T,#generic_ident>(v.0.clone())){
@@ -644,30 +656,28 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
 
                             impl<Th> UpdateStyle<#specific_ident> for Th
                                 where Th: #themeid_ident + 'static {
-                                fn update_style(self, style: &Style)-> Style{
+                                fn update_style(self, style: &mut Style) {
                                     let val : #specific_ident = self.into();
-                                    let mut new_style =  style.clone();
-                                    new_style.updated_at.push(format!("{}", Location::caller()));
-                                    new_style.add_rule(Box::new(val));
-                                    new_style
+
+                                    style.add_rule(Box::new(val));
+
                                 }
                             }
 
 
-                            impl <Th>UpdateStyle<#specific_ident> for (Th, #specific_ident)
+                            impl <Th>UpdateStyle<#specific_ident> for (Th, #generic_ident)
                                     where Th: #themeid_ident + 'static {
-                                    fn update_style(self, style: &Style)-> Style{
+                                    fn update_style(self, style: &mut Style) {
                                         let val : #specific_ident = self.into();
-                                        let mut new_style =  style.clone();
-                                        new_style.updated_at.push(format!("{}", Location::caller()));
-                                        new_style.add_rule(Box::new(val));
-                                        new_style
+
+                                        style.add_rule(Box::new(val));
+
                                     }
                                 }
 
                             impl UpdateStyle<#specific_ident> for usize {
-                                fn update_style(self, style: &Style)-> Style {
-
+                                fn update_style(self, style: &mut Style){
+                                     *style =
                                      with_themes( |borrowed_themes| {
 
                                         let theme_value : #specific_ident =
@@ -680,20 +690,19 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
 
                                             };
 
-                                        let mut new_style =  style.clone();
-                                        new_style.updated_at.push(format!("{}", Location::caller()));
+                                        let mut new_style = style.clone();
                                         new_style.add_rule(Box::new(theme_value));
                                         new_style
-                                     })
+                                     });
                                 }
                         }
                         impl UpdateStyle<#specific_ident> for &[usize; 1]
                         where
                         #specific_ident: 'static + Clone + CssValueTrait,
                          {
-                            fn update_style(self, style: &Style) -> Style {
+                            fn update_style(self, style: &mut Style) {
                                 let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self, style);
                             }
                         }
 
@@ -701,9 +710,9 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         where
                         #specific_ident: 'static + Clone + CssValueTrait,
                          {
-                            fn update_style(self, style: &Style) -> Style {
+                            fn update_style(self, style: &mut Style) {
                                 let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
                             }
                         }
 
@@ -711,9 +720,9 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         where
                         #specific_ident: 'static + Clone + CssValueTrait,
                          {
-                            fn update_style(self, style: &Style) -> Style {
+                            fn update_style(self, style: &mut Style) {
                                 let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
                             }
                         }
 
@@ -722,9 +731,9 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         where
                         #specific_ident: 'static + Clone + CssValueTrait,
                          {
-                            fn update_style(self, style: &Style) -> Style {
+                            fn update_style(self, style: &mut Style) {
                                 let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
                             }
                         }
 
@@ -732,9 +741,9 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         where
                         #specific_ident: 'static + Clone + CssValueTrait,
                          {
-                            fn update_style(self, style: &Style) -> Style {
+                            fn update_style(self, style: &mut Style) {
                                 let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
                             }
                         }
 
@@ -742,9 +751,9 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         where
                         #specific_ident: 'static + Clone + CssValueTrait,
                          {
-                            fn update_style(self, style: &Style) -> Style {
+                            fn update_style(self, style: &mut Style) {
                                 let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
                             }
                         }
 
@@ -752,9 +761,9 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         where
                         #specific_ident: 'static + Clone + CssValueTrait,
                          {
-                            fn update_style(self, style: &Style) -> Style {
+                            fn update_style(self, style: &mut Style) {
                                 let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
                             }
                         }
 
@@ -763,9 +772,9 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         where
                         #specific_ident: 'static + Clone + CssValueTrait,
                          {
-                            fn update_style(self, style: &Style) -> Style {
+                            fn update_style(self, style: &mut Style) {
                                 let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
                             }
                         }
 
@@ -773,9 +782,9 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         where
                         #specific_ident: 'static + Clone + CssValueTrait,
                          {
-                            fn update_style(self, style: &Style) -> Style {
+                            fn update_style(self, style: &mut Style) {
                                 let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
                             }
                         }
 
@@ -784,9 +793,9 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         where
                         #specific_ident: 'static + Clone + CssValueTrait,
                          {
-                            fn update_style(self, style: &Style) -> Style {
+                            fn update_style(self, style: &mut Style) {
                                 let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style)
+                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
                             }
                         }
 
@@ -796,12 +805,12 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
 
                         impl UpdateStyle<#specific_ident> for &[usize] where
                         #specific_ident: 'static + Clone + CssValueTrait,{
-                            fn update_style(self, style: &Style)-> Style {
-                                with_themes( |borrowed_themes| {
+                            fn update_style(self, style: &mut Style){
 
-                                    let mut new_style = style.clone();
-                                    new_style.updated_at.push(format!("{}", Location::caller()));
+                                *style = with_themes( |borrowed_themes| {
 
+
+                                    let mut  new_style = style.clone();
                                     if let Some(bp_scale) = &borrowed_themes.iter().find_map(|theme| if !theme.media_bp_scale.is_empty() { Some(theme.media_bp_scale.clone())} else { None }) {
 
 
@@ -845,19 +854,33 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                                         panic!("No breakpoints have been defined!")
 
                                     }
+
+
+
                                     new_style
-
-
-
-                                })
+                                });
 
                             }
                         }
 
                     };
 
+                    let ident_from_generic = if generic_ident != specific_ident {
+                        quote!(
+                            impl UpdateStyle<#specific_ident> for #generic_ident {
+                            fn update_style(self, style: &mut Style) {
+                                let val : #specific_ident = self.into();
+                                style.add_rule(Box::new(val));
+                            }
+                        }
+                        )
+                    } else {
+                        quote!()
+                    };
+
                     // println!("{}", expanded);
                     exp = quote! {
+                        #ident_from_generic
                         #exp
                         #expanded
                     };
@@ -891,7 +914,7 @@ pub fn create_enums(input: TokenStream) -> TokenStream {
             if let syn::Lit::Str(ref property) = property.lit {
                 let type_name = format_ident!("Css{}", property.value());
 
-                let css_name = format!("{}: {{}}", property.value().to_kebab_case());
+                let css_name = format!("{}: {{}};", property.value().to_kebab_case());
 
                 let expanded = quote! {
 

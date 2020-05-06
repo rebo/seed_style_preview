@@ -28,6 +28,9 @@ features = [
   'HtmlElement',
   "HtmlDocument",
   "HtmlCollection",
+  "StyleSheet",
+  "CssRuleList",
+  "CssStyleSheet",
   "HtmlStyleElement",
   "MediaQueryList",
 ]

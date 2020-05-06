@@ -1,6 +1,6 @@
 #![feature(track_caller)]
 pub mod style;
-pub use style::{Style, *};
+pub use style::{Style, S,*};
 
 #[cfg(test)]
 mod tests {

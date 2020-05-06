@@ -5,7 +5,6 @@ use seed::{prelude::*, *};
 use seed_style_macros::generate_froms;
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::panic::Location;
 
 use seed_hooks::*;
 pub trait BorderTheme: Eq + Hash + Clone {}
@@ -29,8 +28,8 @@ pub trait BreakpointTheme: Eq + Hash + Clone {}
 #[topo::nested]
 pub fn use_themes<T, Ms, F, Q>(themes: T, content: F) -> Node<Ms>
 where
-    F: Fn() -> Node<Ms>,
-    T: Fn() -> Q,
+    F: FnOnce() -> Node<Ms>,
+    T: FnOnce() -> Q,
     Q: Into<Vec<Theme>>,
 {
     do_once(|| {
@@ -299,53 +298,53 @@ impl From<CssSpace> for CssMarginBottom {
     }
 }
 
-impl From<CssSpace> for CssTop {
-    fn from(val: CssSpace) -> Self {
-        match val {
-            CssSpace::Auto => Self::Auto,
-            CssSpace::Length(val) => Self::Length(val),
-            CssSpace::Percentage(val) => Self::Percentage(val),
-            CssSpace::Inherit => Self::Inherit,
-            CssSpace::StringValue(val) => Self::StringValue(val),
-        }
-    }
-}
+// impl From<CssSpace> for CssTop {
+//     fn from(val: CssSpace) -> Self {
+//         match val {
+//             CssSpace::Auto => Self::Auto,
+//             CssSpace::Length(val) => Self::Length(val),
+//             CssSpace::Percentage(val) => Self::Percentage(val),
+//             CssSpace::Inherit => Self::Inherit,
+//             CssSpace::StringValue(val) => Self::StringValue(val),
+//         }
+//     }
+// }
 
-impl From<CssSpace> for CssBottom {
-    fn from(val: CssSpace) -> Self {
-        match val {
-            CssSpace::Auto => Self::Auto,
-            CssSpace::Length(val) => Self::Length(val),
-            CssSpace::Percentage(val) => Self::Percentage(val),
-            CssSpace::Inherit => Self::Inherit,
-            CssSpace::StringValue(val) => Self::StringValue(val),
-        }
-    }
-}
+// impl From<CssSpace> for CssBottom {
+//     fn from(val: CssSpace) -> Self {
+//         match val {
+//             CssSpace::Auto => Self::Auto,
+//             CssSpace::Length(val) => Self::Length(val),
+//             CssSpace::Percentage(val) => Self::Percentage(val),
+//             CssSpace::Inherit => Self::Inherit,
+//             CssSpace::StringValue(val) => Self::StringValue(val),
+//         }
+//     }
+// }
 
-impl From<CssSpace> for CssLeft {
-    fn from(val: CssSpace) -> Self {
-        match val {
-            CssSpace::Auto => Self::Auto,
-            CssSpace::Length(val) => Self::Length(val),
-            CssSpace::Percentage(val) => Self::Percentage(val),
-            CssSpace::Inherit => Self::Inherit,
-            CssSpace::StringValue(val) => Self::StringValue(val),
-        }
-    }
-}
+// impl From<CssSpace> for CssLeft {
+//     fn from(val: CssSpace) -> Self {
+//         match val {
+//             CssSpace::Auto => Self::Auto,
+//             CssSpace::Length(val) => Self::Length(val),
+//             CssSpace::Percentage(val) => Self::Percentage(val),
+//             CssSpace::Inherit => Self::Inherit,
+//             CssSpace::StringValue(val) => Self::StringValue(val),
+//         }
+//     }
+// }
 
-impl From<CssSpace> for CssRight {
-    fn from(val: CssSpace) -> Self {
-        match val {
-            CssSpace::Auto => Self::Auto,
-            CssSpace::Length(val) => Self::Length(val),
-            CssSpace::Percentage(val) => Self::Percentage(val),
-            CssSpace::Inherit => Self::Inherit,
-            CssSpace::StringValue(val) => Self::StringValue(val),
-        }
-    }
-}
+// impl From<CssSpace> for CssRight {
+//     fn from(val: CssSpace) -> Self {
+//         match val {
+//             CssSpace::Auto => Self::Auto,
+//             CssSpace::Length(val) => Self::Length(val),
+//             CssSpace::Percentage(val) => Self::Percentage(val),
+//             CssSpace::Inherit => Self::Inherit,
+//             CssSpace::StringValue(val) => Self::StringValue(val),
+//         }
+//     }
+// }
 
 impl From<CssSpace> for CssGridGap {
     fn from(val: CssSpace) -> Self {
@@ -1018,10 +1017,10 @@ generate_froms!([
     ("SpaceTheme", "CssSpace", "CssMarginRight", "spaces_scale"),
     ("SpaceTheme", "CssSpace", "CssMarginTop", "spaces_scale"),
     ("SpaceTheme", "CssSpace", "CssMarginBottom", "spaces_scale"),
-    ("SpaceTheme", "CssSpace", "CssLeft", "spaces_scale"),
-    ("SpaceTheme", "CssSpace", "CssRight", "spaces_scale"),
-    ("SpaceTheme", "CssSpace", "CssTop", "spaces_scale"),
-    ("SpaceTheme", "CssSpace", "CssBottom", "spaces_scale"),
+    // ("SpaceTheme", "CssSpace", "CssLeft", "spaces_scale"),
+    // ("SpaceTheme", "CssSpace", "CssRight", "spaces_scale"),
+    // ("SpaceTheme", "CssSpace", "CssTop", "spaces_scale"),
+    // ("SpaceTheme", "CssSpace", "CssBottom", "spaces_scale"),
     ("SpaceTheme", "CssSpace", "CssGridGap", "spaces_scale"),
     ("SpaceTheme", "CssSpace", "CssGridColumnGap", "spaces_scale"),
     ("SpaceTheme", "CssSpace", "CssGridRowGap", "spaces_scale"),

@@ -8,7 +8,7 @@ use std::marker::PhantomData;
 #[derive(Default, Clone)]
 pub struct Layout<A>
 where
-    A: GridArea,
+    A: LayoutArea,
 {
     pub areas: Vec<A>,
     pub layout: Vec<Vec<A>>,
@@ -19,11 +19,11 @@ where
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum NoArea {}
-impl GridArea for NoArea {}
+impl LayoutArea for NoArea {}
 
 impl<A> Layout<A>
 where
-    A: GridArea,
+    A: LayoutArea,
 {
     pub fn style(mut self, style: Style) -> Self {
         self.container_styles = Some(style);
@@ -71,7 +71,7 @@ where
     }
 }
 
-pub trait GridArea: Hash + PartialEq + Eq + std::fmt::Debug + Clone + 'static {
+pub trait LayoutArea: Hash + PartialEq + Eq + std::fmt::Debug + Clone + 'static {
     fn is_empty(&self) -> bool {
         false
     }

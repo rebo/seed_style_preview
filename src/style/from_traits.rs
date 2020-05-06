@@ -9,7 +9,7 @@ where
     ExactLength: Into<T>,
     T: UpdateStyle<T>,
 {
-    fn update_style(self, style: &Style) -> Style {
+    fn update_style(self, style: &mut Style) {
         self.into().update_style(style)
     }
 }
@@ -19,8 +19,20 @@ where
     Percent: Into<T>,
     T: UpdateStyle<T>,
 {
-    fn update_style(self, style: &Style) -> Style {
+    fn update_style(self, style: &mut Style) {
         self.into().update_style(style)
+    }
+}
+
+impl From<ExactLength> for CssLetterSpacing {
+    fn from(length: ExactLength) -> Self {
+        CssLetterSpacing::Length(length)
+    }
+}
+
+impl From<ExactLength> for CssLineHeight {
+    fn from(length: ExactLength) -> Self {
+        CssLineHeight::Length(length)
     }
 }
 
@@ -353,5 +365,11 @@ impl From<ExactLength> for CssBorderTopWidth {
 impl From<ExactLength> for CssBorderBottomWidth {
     fn from(v: ExactLength) -> Self {
         Self::Length(v)
+    }
+}
+
+impl From<Percent> for CssLineHeight {
+    fn from(pc: Percent) -> Self {
+        CssLineHeight::Percentage(pc)
     }
 }
