@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["rebo"]
 edition = "2018"
 autotests = false
+description = "Macros for CSS Styling for Seed web apps"
+license = "Apache-2.0 OR MIT"
 
 
 [lib]
