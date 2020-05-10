@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["rebo"]
 edition = "2018"
 autotests = false
-publish = false
+
 
 [lib]
 proc-macro = true
