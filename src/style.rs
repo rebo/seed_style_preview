@@ -1,15 +1,14 @@
 use derive_more::Display;
 use harsh::{Harsh, HarshBuilder};
 use seed::{prelude::*, *};
-use std::cell::RefCell;
+use seed_hooks::*;
+use seed_style_macros::create_pseudos;
+use std::cell::{Cell, RefCell};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::panic::Location;
 use wasm_bindgen::JsCast;
-
-use lazy_static::*;
-use seed_style_macros::create_pseudos;
 mod css_values;
 pub use css_values::*;
 pub mod measures;
@@ -34,11 +33,12 @@ pub use from_traits::*;
 
 use std::collections::HashMap;
 
-lazy_static! {
-    pub static ref S: Style = Style { ..Style::default() };
+pub fn s() -> Style {
+    Style::default()
 }
 
 thread_local! {
+    pub static GLOBAL_STYLES_COUNT: Cell<u32> = Cell::new(0);
     pub static STYLES_IN_ELEM: RefCell<Vec<Style>> = RefCell::new(vec![]);
     pub static STYLES_USED : RefCell<HashSet<u64>> = RefCell::new(HashSet::<u64>::new());
     pub static HASH_IDS_GENERATOR: RefCell<Harsh> = RefCell::new(HarshBuilder::new().init().unwrap());
@@ -73,6 +73,7 @@ pub struct Style {
     name: String,
     keyframes: Keyframes,
     combinator: Option<Combinator>,
+    pre_combinators: Vec<Combinator>,
 }
 
 impl Default for Style {
@@ -87,6 +88,7 @@ impl Default for Style {
             media: None,
             keyframes: Keyframes::default(),
             combinator: None,
+            pre_combinators: vec![],
         }
     }
 }
@@ -157,8 +159,83 @@ where
         });
     }
 }
+impl<R, P> UpdateStyle<P> for &[R; 2]
+where
+    R: Into<P> + Clone,
+    P: 'static + Clone + CssValueTrait,
+{
+    fn update_style(self, style: &mut Style) {
+        self.as_ref().update_style(style)
+    }
+}
 
 impl<R, P> UpdateStyle<P> for &[R; 3]
+where
+    R: Into<P> + Clone,
+    P: 'static + Clone + CssValueTrait,
+{
+    fn update_style(self, style: &mut Style) {
+        self.as_ref().update_style(style)
+    }
+}
+
+impl<R, P> UpdateStyle<P> for &[R; 4]
+where
+    R: Into<P> + Clone,
+    P: 'static + Clone + CssValueTrait,
+{
+    fn update_style(self, style: &mut Style) {
+        self.as_ref().update_style(style)
+    }
+}
+impl<R, P> UpdateStyle<P> for &[R; 5]
+where
+    R: Into<P> + Clone,
+    P: 'static + Clone + CssValueTrait,
+{
+    fn update_style(self, style: &mut Style) {
+        self.as_ref().update_style(style)
+    }
+}
+
+impl<R, P> UpdateStyle<P> for &[R; 6]
+where
+    R: Into<P> + Clone,
+    P: 'static + Clone + CssValueTrait,
+{
+    fn update_style(self, style: &mut Style) {
+        self.as_ref().update_style(style)
+    }
+}
+impl<R, P> UpdateStyle<P> for &[R; 7]
+where
+    R: Into<P> + Clone,
+    P: 'static + Clone + CssValueTrait,
+{
+    fn update_style(self, style: &mut Style) {
+        self.as_ref().update_style(style)
+    }
+}
+
+impl<R, P> UpdateStyle<P> for &[R; 8]
+where
+    R: Into<P> + Clone,
+    P: 'static + Clone + CssValueTrait,
+{
+    fn update_style(self, style: &mut Style) {
+        self.as_ref().update_style(style)
+    }
+}
+impl<R, P> UpdateStyle<P> for &[R; 9]
+where
+    R: Into<P> + Clone,
+    P: 'static + Clone + CssValueTrait,
+{
+    fn update_style(self, style: &mut Style) {
+        self.as_ref().update_style(style)
+    }
+}
+impl<R, P> UpdateStyle<P> for &[R; 10]
 where
     R: Into<P> + Clone,
     P: 'static + Clone + CssValueTrait,
@@ -175,116 +252,146 @@ impl Style {
     //Accessor Shorthand
 
     #[track_caller]
-    pub fn padding_x<T>(&self, val: T) -> Style
+    pub fn padding_x<T>(self, val: T) -> Style
     where
-        T: Clone + Into<CssSpace>,
+        T: Clone + UpdateStyle<CssPaddingLeft> + UpdateStyle<CssPaddingRight>,
     {
-        let space = val.into();
-
-        let pl: CssPaddingLeft = space.clone().into();
-        let pr: CssPaddingRight = space.into();
-
-        self.padding_left(pl).padding_right(pr)
+        self.padding_left(val.clone()).padding_right(val)
     }
     #[track_caller]
-    pub fn padding_y<T>(&self, val: T) -> Style
+    pub fn padding_y<T>(self, val: T) -> Style
     where
-        T: Clone + Into<CssSpace>,
+        T: Clone + UpdateStyle<CssPaddingTop> + UpdateStyle<CssPaddingBottom>,
     {
-        let space = val.into();
-
-        let pt: CssPaddingTop = space.clone().into();
-        let pb: CssPaddingBottom = space.into();
-
-        self.padding_top(pt).padding_bottom(pb)
+        self.padding_top(val.clone()).padding_bottom(val)
     }
     #[track_caller]
-    pub fn margin_x<T>(&self, val: T) -> Style
+    pub fn margin_x<T>(self, val: T) -> Style
     where
-        T: Clone + Into<CssSpace>,
+        T: Clone + UpdateStyle<CssMarginLeft> + UpdateStyle<CssMarginRight>,
     {
-        let space = val.into();
+        // let space = val.into();
 
-        let pl: CssMarginLeft = space.clone().into();
-        let pr: CssMarginRight = space.into();
+        // let pl: CssMarginLeft = space.clone().into();
+        // let pr: CssMarginRight = space.into();
 
-        self.margin_left(pl).margin_right(pr)
+        self.margin_left(val.clone()).margin_right(val)
     }
     #[track_caller]
-    pub fn margin_y<T>(&self, val: T) -> Style
+    pub fn margin_y<T>(self, val: T) -> Style
     where
-        T: Clone + Into<CssSpace>,
+        T: Clone + UpdateStyle<CssMarginTop> + UpdateStyle<CssMarginBottom>,
     {
-        let space = val.into();
+        // let space = val.into();
 
-        let pt: CssMarginTop = space.clone().into();
-        let pb: CssMarginBottom = space.into();
+        // let pt: CssMarginTop = space.clone().into();
+        // let pb: CssMarginBottom = space.into();
 
-        self.margin_top(pt).margin_bottom(pb)
+        self.margin_top(val.clone()).margin_bottom(val)
     }
 
     #[track_caller]
-    pub fn px<T>(&self, val: T) -> Style
+    pub fn px<T>(self, val: T) -> Style
     where
-        T: Clone + Into<CssSpace>,
+        T: Clone + UpdateStyle<CssPaddingLeft> + UpdateStyle<CssPaddingRight>,
     {
-        let space = val.into();
+        // let space = val.into();
 
-        let pl: CssPaddingLeft = space.clone().into();
-        let pr: CssPaddingRight = space.into();
+        // let pl: CssPaddingLeft = space.clone().into();
+        // let pr: CssPaddingRight = space.into();
 
-        self.padding_left(pl).padding_right(pr)
+        self.padding_left(val.clone()).padding_right(val)
     }
     #[track_caller]
-    pub fn py<T>(&self, val: T) -> Style
+    pub fn py<T>(self, val: T) -> Style
     where
-        T: Clone + Into<CssSpace>,
+        T: Clone + UpdateStyle<CssPaddingTop> + UpdateStyle<CssPaddingBottom>,
     {
-        let space = val.into();
+        // let space = val.into();
 
-        let pt: CssPaddingTop = space.clone().into();
-        let pb: CssPaddingBottom = space.into();
+        // let pt: CssPaddingTop = space.clone().into();
+        // let pb: CssPaddingBottom = space.into();
 
-        self.padding_top(pt).padding_bottom(pb)
+        self.padding_top(val.clone()).padding_bottom(val)
     }
     #[track_caller]
-    pub fn mx<T>(&self, val: T) -> Style
+    pub fn mx<T>(self, val: T) -> Style
     where
-        T: Clone + Into<CssSpace>,
+        T: Clone + UpdateStyle<CssMarginLeft> + UpdateStyle<CssMarginRight>,
     {
-        let space = val.into();
+        // let space = val.into();
 
-        let pl: CssMarginLeft = space.clone().into();
-        let pr: CssMarginRight = space.into();
+        // let pl: CssMarginLeft = space.clone().into();
+        // let pr: CssMarginRight = space.into();
 
-        self.margin_left(pl).margin_right(pr)
-    }
-    #[track_caller]
-    pub fn my<T>(&self, val: T) -> Style
-    where
-        T: Clone + Into<CssSpace>,
-    {
-        let space = val.into();
-
-        let pt: CssMarginTop = space.clone().into();
-        let pb: CssMarginBottom = space.into();
-
-        self.margin_top(pt).margin_bottom(pb)
+        self.margin_left(val.clone()).margin_right(val)
     }
 
     #[track_caller]
-    pub fn add_style<T>(&self, val: T) -> Style
+    pub fn mx_auto(self) -> Style {
+        // let space = val.into();
+
+        // let pl: CssMarginLeft = space.clone().into();
+        // let pr: CssMarginRight = space.into();
+
+        self.margin_left_auto().margin_right_auto()
+    }
+
+    #[track_caller]
+    pub fn my_auto(self) -> Style {
+        // let space = val.into();
+
+        // let pl: CssMarginLeft = space.clone().into();
+        // let pr: CssMarginRight = space.into();
+
+        self.margin_top_auto().margin_bottom_auto()
+    }
+
+    #[track_caller]
+    pub fn margin_x_auto(self) -> Style {
+        // let space = val.into();
+
+        // let pl: CssMarginLeft = space.clone().into();
+        // let pr: CssMarginRight = space.into();
+
+        self.margin_left_auto().margin_right_auto()
+    }
+
+    #[track_caller]
+    pub fn margin_y_auto(self) -> Style {
+        // let space = val.into();
+
+        // let pl: CssMarginLeft = space.clone().into();
+        // let pr: CssMarginRight = space.into();
+
+        self.margin_top_auto().margin_bottom_auto()
+    }
+
+    #[track_caller]
+    pub fn my<T>(self, val: T) -> Style
+    where
+        T: Clone + UpdateStyle<CssMarginTop> + UpdateStyle<CssMarginBottom>,
+    {
+        // let space = val.into();
+
+        // let pt: CssMarginTop = space.clone().into();
+        // let pb: CssMarginBottom = space.into();
+
+        self.margin_top(val.clone()).margin_bottom(val)
+    }
+
+    #[track_caller]
+    pub fn add_style<T>(mut self, val: T) -> Style
     where
         T: Into<Style>,
     {
         let val = val.into();
 
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
+        self.updated_at.push(format!("{}", Location::caller()));
         for rule in &val.rules {
-            new_style.add_rule(rule.value.clone())
+            self.add_rule(rule.value.clone())
         }
-        new_style
+        self
     }
 
     fn add_rule(&mut self, value: Box<dyn CssValueTrait>) {
@@ -332,106 +439,136 @@ impl Style {
     ]);
 
     #[track_caller]
-    pub fn name(&self, name: &str) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.name = name.to_string();
-        new_style
+    pub fn name(mut self, name: &str) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.name = name.to_string();
+        self
     }
 
     #[track_caller]
-    pub fn keyframe(&self, key: i32, to: Style) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.keyframes.frames.push((key, Box::new(to)));
-        new_style
+    pub fn keyframe(mut self, key: i32, to: Style) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.keyframes.frames.push((key, Box::new(to)));
+        self
     }
 
     #[track_caller]
-    pub fn media(&self, val: &str) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.media = Some(val.to_string());
-        new_style
+    pub fn media(mut self, val: &str) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.media = Some(val.to_string());
+        self
     }
 
     #[track_caller]
-    pub fn follows(&self, val: &str) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.combinator = Some(Combinator::Post(PostCombinator::AdjacentSiblingFollows(
+    pub fn follows(mut self, val: &str) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.combinator = Some(Combinator::Post(PostCombinator::AdjacentSiblingFollows(
             val.to_string(),
         )));
-        new_style
+        self
     }
 
     #[track_caller]
-    pub fn sibling_to(&self, val: &str) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.combinator = Some(Combinator::Post(PostCombinator::GeneralSibingFollows(
+    pub fn sibling_of(mut self, val: &str) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.combinator = Some(Combinator::Post(PostCombinator::GeneralSibingFollows(
             val.to_string(),
         )));
-        new_style
+        self
     }
 
     #[track_caller]
-    pub fn is_direct_child_of(&self, val: &str) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.combinator = Some(Combinator::Post(PostCombinator::IsDirectChildOf(
+    pub fn child_of(mut self, val: &str) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.combinator = Some(Combinator::Post(PostCombinator::IsDirectChildOf(
             val.to_string(),
         )));
-        new_style
+        self
     }
 
     #[track_caller]
-    pub fn is_child_of(&self, val: &str) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.combinator = Some(Combinator::Post(PostCombinator::IsChildOf(val.to_string())));
-        new_style
+    pub fn descendant_of(mut self, val: &str) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.combinator = Some(Combinator::Post(PostCombinator::IsChildOf(val.to_string())));
+        self
     }
 
     #[track_caller]
-    pub fn if_next_style(&self, val: &str) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.combinator = Some(Combinator::Pre(PreCombinator::AdjacentSiblingPreceeds(
+    pub fn style_following(mut self, val: &str) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.pre_combinators = vec![Combinator::Pre(PreCombinator::AdjacentSiblingPreceeds(
             val.to_string(),
-        )));
-        new_style
+        ))];
+        self
     }
 
     #[track_caller]
-    pub fn if_sibling_style(&self, val: &str) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.combinator = Some(Combinator::Pre(PreCombinator::GeneralSibingPreceeds(
+    pub fn style_sibling(mut self, val: &str) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.pre_combinators = vec![Combinator::Pre(PreCombinator::GeneralSibingPreceeds(
             val.to_string(),
-        )));
-        new_style
+        ))];
+        self
     }
 
     #[track_caller]
-    pub fn if_direct_child_style(&self, val: &str) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.combinator = Some(Combinator::Pre(PreCombinator::IsDirectParentOf(
+    pub fn style_child(mut self, val: &str) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.pre_combinators = vec![Combinator::Pre(PreCombinator::IsDirectParentOf(
             val.to_string(),
-        )));
-        new_style
+        ))];
+        self
     }
 
     #[track_caller]
-    pub fn if_nested_style(&self, val: &str) -> Style {
-        let mut new_style = self.clone();
-        new_style.updated_at.push(format!("{}", Location::caller()));
-        new_style.combinator = Some(Combinator::Pre(PreCombinator::IsParentOf(val.to_string())));
-        new_style
+    pub fn style_descendant(mut self, val: &str) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.pre_combinators = vec![Combinator::Pre(PreCombinator::IsParentOf(val.to_string()))];
+        self
     }
 
-    pub fn only_and_below<T>(&self, bp: T) -> Style
+    #[track_caller]
+    pub fn style_siblings(mut self, siblings: &[&str]) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.pre_combinators = vec![];
+        for sibling in siblings.iter() {
+            self.pre_combinators
+                .push(Combinator::Pre(PreCombinator::GeneralSibingPreceeds(
+                    sibling.to_string(),
+                )));
+        }
+        self
+    }
+
+    #[track_caller]
+    pub fn style_children(mut self, children: &[&str]) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+
+        self.pre_combinators = vec![];
+        for child in children.iter() {
+            self.pre_combinators
+                .push(Combinator::Pre(PreCombinator::IsDirectParentOf(
+                    child.to_string(),
+                )));
+        }
+
+        self
+    }
+
+    #[track_caller]
+    pub fn style_descendants(mut self, descendants: &[&str]) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.pre_combinators = vec![];
+        for descendant in descendants.iter() {
+            self.pre_combinators
+                .push(Combinator::Pre(PreCombinator::IsParentOf(
+                    descendant.to_string(),
+                )));
+        }
+        self
+    }
+
+    pub fn only_and_below<T>(self, bp: T) -> Style
     where
         T: BreakpointTheme + 'static,
     {
@@ -448,7 +585,7 @@ impl Style {
         }
     }
 
-    pub fn only<T>(&self, bp: T) -> Style
+    pub fn only<T>(self, bp: T) -> Style
     where
         T: BreakpointTheme + 'static,
     {
@@ -469,7 +606,7 @@ impl Style {
         }
     }
 
-    pub fn only_and_above<T>(&self, bp: T) -> Style
+    pub fn only_and_above<T>(self, bp: T) -> Style
     where
         T: BreakpointTheme + 'static,
     {
@@ -486,7 +623,7 @@ impl Style {
         }
     }
 
-    pub fn except<T>(&self, bp: T) -> Style
+    pub fn except<T>(self, bp: T) -> Style
     where
         T: BreakpointTheme + 'static,
     {
@@ -645,15 +782,399 @@ impl Keyframes {
     }
 }
 
+// #[derive(Hash)]
+//     struct GlobalStyle {
+//         style: Style,
+//         global: String,
+//     }
+
+fn add_global_init_css_to_head(
+    css: &str,
+    short_hash: &str,
+    style: &Style,
+    global_classname: &str,
+    selector: &str,
+) {
+    let head_elem = document().get_elements_by_tag_name("head").item(0).unwrap();
+
+    let css = if !style.keyframes.frames.is_empty() {
+        format!("{}    animation-name: anim-{};\n", css, short_hash)
+    } else {
+        css.to_string()
+    };
+
+    let pre_combinators_str = style
+        .pre_combinators
+        .iter()
+        .map(|c| {
+            if let Combinator::Pre(c) = c {
+                format!(
+                    ".{}{}{}{}",
+                    global_classname,
+                    selector,
+                    c,
+                    style.pseudo.render()
+                )
+            } else {
+                String::new()
+            }
+        })
+        .collect::<Vec<String>>()
+        .join(",");
+
+    let full_css = if style.pre_combinators.len() > 0 {
+        match &style.media {
+            Some(media) => format!("{}{{\n{}{{\n{}}}}}\n", media, pre_combinators_str, css),
+
+            None => format!("\n{}{{\n{}}}\n", pre_combinators_str, css),
+        }
+    } else {
+        match (&style.media, &style.combinator) {
+            (Some(media), Some(Combinator::Pre(c))) => format!(
+                "{}{{\n.{}{}{}{}{{\n{}}}}}\n",
+                media,
+                global_classname,
+                selector,
+                c,
+                style.pseudo.render(),
+                css
+            ),
+            (Some(media), Some(Combinator::Post(c))) => format!(
+                "{}{{\n.{}{}{}{}{{\n{}}}}}\n",
+                media,
+                global_classname,
+                c,
+                selector,
+                style.pseudo.render(),
+                css
+            ),
+            (Some(media), None) => format!(
+                "{}{{\n.{}{}{}{{\n{}}}}}\n",
+                media,
+                global_classname,
+                selector,
+                style.pseudo.render(),
+                css
+            ),
+            (None, Some(Combinator::Pre(c))) => format!(
+                "\n.{}{}{}{}{{\n{}}}\n",
+                global_classname,
+                selector,
+                c,
+                style.pseudo.render(),
+                css
+            ),
+            (None, Some(Combinator::Post(c))) => format!(
+                "\n.{}{}{}{}{{\n{}}}\n",
+                global_classname,
+                c,
+                selector,
+                style.pseudo.render(),
+                css
+            ),
+
+            (None, None) => format!(
+                "\n.{}{}{}{{\n{}}}\n",
+                global_classname,
+                selector,
+                style.pseudo.render(),
+                css
+            ),
+        }
+    };
+
+    // let full_css = match (&style.media, &style.combinator) {
+    //     (Some(media), Some(Combinator::Pre(c))) => format!(
+    //         "{}{{\n{}{}{}{{\n{}}}}}\n",
+    //         media,
+    //         selector,
+    //         c,
+    //         style.pseudo.render(),
+    //         css
+    //     ),
+    //     (Some(media), Some(Combinator::Post(c))) => format!(
+    //         "{}{{\n{}{}{}{{\n{}}}}}\n",
+    //         media,
+    //         c,
+    //         selector,
+    //         style.pseudo.render(),
+    //         css
+    //     ),
+    //     (Some(media), None) => format!(
+    //         "{}{{\n{}{}{{\n{}}}}}\n",
+    //         media,
+    //         selector,
+    //         style.pseudo.render(),
+    //         css
+    //     ),
+    //     (None, Some(Combinator::Pre(c))) => format!(
+    //         "\n{}{}{}{{\n{}}}\n",
+    //         selector,
+    //         c,
+    //         style.pseudo.render(),
+    //         css
+    //     ),
+    //     (None, Some(Combinator::Post(c))) => format!(
+    //         "\n{}{}{}{{\n{}}}\n",
+    //         c,
+    //         selector,
+    //         style.pseudo.render(),
+    //         css
+    //     ),
+
+    //     (None, None) => format!("\n{}{}{{\n{}}}\n", selector, style.pseudo.render(), css),
+    // };
+
+    let css_stylesheet =
+        if let Some(style_elem) = head_elem.get_elements_by_tag_name("style").item(0) {
+            let style_elem = style_elem.dyn_into::<web_sys::HtmlStyleElement>().unwrap();
+            style_elem
+                .sheet()
+                .unwrap()
+                .dyn_into::<web_sys::CssStyleSheet>()
+                .unwrap()
+
+        // let existing_style_content = style_elem.inner_html();
+
+        // let new_style_content = format!("{}\n{}", existing_style_content, full_css);
+        // style_elem.set_inner_html(&new_style_content);
+        } else {
+            let style_elem = document()
+                .create_element("style")
+                .unwrap()
+                .dyn_into::<web_sys::HtmlStyleElement>()
+                .unwrap();
+
+            // style_elem.set_inner_html(&full_css);
+
+            let style_elem = style_elem.dyn_into::<web_sys::HtmlStyleElement>().unwrap();
+            let _ = head_elem.append_child(&style_elem);
+            style_elem
+                .sheet()
+                .unwrap()
+                .dyn_into::<web_sys::CssStyleSheet>()
+                .unwrap()
+        };
+
+    let rules_length = GLOBAL_STYLES_COUNT.with(|count| count.get());
+    let _ = css_stylesheet.insert_rule_with_index(&full_css, rules_length);
+
+    GLOBAL_STYLES_COUNT.with(|count| {
+        let mut c = count.get();
+        c += 1;
+        count.set(c);
+    });
+
+    for (media_breakpoint, rule_vec) in &style.media_rules {
+        let mut media_string = String::new();
+        media_string.push_str(&format!(
+            "{}{{\n.{}{}{{\n",
+            media_breakpoint, global_classname, selector
+        ));
+
+        for rule in rule_vec {
+            media_string.push_str(&rule.render());
+        }
+
+        let rules_length = GLOBAL_STYLES_COUNT.with(|count| count.get());
+        let _ = css_stylesheet.insert_rule_with_index(&media_string, rules_length);
+        GLOBAL_STYLES_COUNT.with(|count| {
+            let mut c = count.get();
+            c += 1;
+            count.set(c);
+        });
+    }
+
+    if !style.keyframes.frames.is_empty() {
+        let rules_length = GLOBAL_STYLES_COUNT.with(|count| count.get());
+        let _ = css_stylesheet.insert_rule_with_index(
+            &format!(
+                "\n\n@keyframes anim-{}{{ \n  {}  \n}}\n",
+                short_hash,
+                style.keyframes.render()
+            ),
+            rules_length,
+        );
+        GLOBAL_STYLES_COUNT.with(|count| {
+            let mut c = count.get();
+            c += 1;
+            count.set(c);
+        });
+    }
+}
+
+// fn add_global_css_to_head(css: &str, variant_hash: u64, style: &Style, name: &str) {
+
+//     let short_hash = format!("{}{}", name, short_uniq_id(variant_hash));
+
+//     let head_elem = document().get_elements_by_tag_name("head").item(0).unwrap();
+
+//     let css = if !style.keyframes.frames.is_empty() {
+//         format!("{}    animation-name: anim-{};\n", css, short_hash)
+//     } else {
+//         css.to_string()
+//     };
+
+//     let full_css = match (&style.media, &style.combinator) {
+//         (Some(media), Some(Combinator::Pre(c))) => format!(
+//             "{}{{\n.seed-global-style-{} {}{}{}{{\n{}}}}}\n",
+//             media,
+//             short_hash,
+//             selector,
+//             c,
+//             style.pseudo.render(),
+//             css
+//         ),
+//         (Some(media), Some(Combinator::Post(c))) => format!(
+//             "{}{{\n.seed-global-style-{} {}{}{}{{\n{}}}}}\n",
+//             media,
+//             c,
+//             short_hash,
+//             selector,
+//             style.pseudo.render(),
+//             css
+//         ),
+//         (Some(media), None) => format!(
+//             "{}{{\n.seed-global-style-{} {}{}{{\n{}}}}}\n",
+//             media,
+//             short_hash,
+//             selector,
+//             style.pseudo.render(),
+//             css
+//         ),
+//         (None, Some(Combinator::Pre(c))) => format!(
+//             "\n.seed-global-style-{} {}{}{}{{\n{}}}\n",
+//             short_hash,
+//             selector,
+//             c,
+//             style.pseudo.render(),
+//             css
+//         ),
+//         (None, Some(Combinator::Post(c))) => format!(
+//             "\n.seed-global-style-{} {}{}{}{{\n{}}}\n",
+//             c,
+//             short_hash,
+//             selector,
+//             style.pseudo.render(),
+//             css
+//         ),
+
+//         (None, None) => format!(
+//             "\n.seed-global-style-{} {}{}{{\n{}}}\n",
+//             short_hash,
+//             selector,
+//             style.pseudo.render(),
+//             css
+//         ),
+//     };
+//     if let Some(html_root_elem) = head_elem.get_elements_by_tag_name("html").item(0) {
+//         // let style_elem = style_elem.dyn_into::<web_sys::HtmlStyleElement>().unwrap();
+//         // style_elem
+//         //     .sheet()
+//         //     .unwrap()
+//         //     .dyn_into::<web_sys::CssStyleSheet>()
+//         //     .unwrap()
+
+//         let html_root_class = format!(" seed-global-style-{} ", short_hash);
+//         if let Some(mut class_name) = html_root_elem.get_attribute("class") {
+//             if let Some(existing_seed_style_position) = class_name.find("seedstyle-") {
+//                 let final_position = existing_seed_style_position + 10 + short_hash.len();
+//                 class_name.replace_range(
+//                     existing_seed_style_position..final_position,
+//                     &html_root_class,
+//                 )
+//             } else {
+//                 class_name.push_str(&html_root_class);
+//             }
+//             let _ = html_root_elem.set_attribute("class", &class_name);
+//         } else {
+//             let _ = html_root_elem.set_attribute("class", &html_root_class);
+//         }
+//     }
+
+//     let css_stylesheet =
+//         if let Some(style_elem) = head_elem.get_elements_by_tag_name("style").item(0) {
+//             let style_elem = style_elem.dyn_into::<web_sys::HtmlStyleElement>().unwrap();
+//             style_elem
+//                 .sheet()
+//                 .unwrap()
+//                 .dyn_into::<web_sys::CssStyleSheet>()
+//                 .unwrap()
+
+//         // let existing_style_content = style_elem.inner_html();
+
+//         // let new_style_content = format!("{}\n{}", existing_style_content, full_css);
+//         // style_elem.set_inner_html(&new_style_content);
+//         } else {
+//             let style_elem = document()
+//                 .create_element("style")
+//                 .unwrap()
+//                 .dyn_into::<web_sys::HtmlStyleElement>()
+//                 .unwrap();
+
+//             // style_elem.set_inner_html(&full_css);
+
+//             let style_elem = style_elem.dyn_into::<web_sys::HtmlStyleElement>().unwrap();
+//             let _ = head_elem.append_child(&style_elem);
+//             style_elem
+//                 .sheet()
+//                 .unwrap()
+//                 .dyn_into::<web_sys::CssStyleSheet>()
+//                 .unwrap()
+//         };
+
+//     let rules_length = GLOBAL_STYLES_COUNT.with(|count| count.get());
+//     let _ = css_stylesheet.insert_rule_with_index(&full_css, rules_length);
+//     GLOBAL_STYLES_COUNT.with(|count| {
+//         let mut c = count.get();
+//         c += 1;
+//         count.set(c);
+//     });
+
+//     for (media_breakpoint, rule_vec) in &style.media_rules {
+//         let mut media_string = String::new();
+//         media_string.push_str(&format!("{}{{\n{}{{\n", media_breakpoint, selector));
+
+//         for rule in rule_vec {
+//             media_string.push_str(&rule.render());
+//         }
+
+//         let rules_length = GLOBAL_STYLES_COUNT.with(|count| count.get());
+//         let _ = css_stylesheet.insert_rule_with_index(&media_string, rules_length);
+//         GLOBAL_STYLES_COUNT.with(|count| {
+//             let mut c = count.get();
+//             c += 1;
+//             count.set(c);
+//         });
+//     }
+
+//     if !style.keyframes.frames.is_empty() {
+//         let rules_length = GLOBAL_STYLES_COUNT.with(|count| count.get());
+//         let _ = css_stylesheet.insert_rule_with_index(
+//             &format!(
+//                 "\n\n@keyframes anim-{}{{ \n  {}  \n}}\n",
+//                 short_hash,
+//                 style.keyframes.render()
+//             ),
+//             rules_length,
+//         );
+//         GLOBAL_STYLES_COUNT.with(|count| {
+//             let mut c = count.get();
+//             c += 1;
+//             count.set(c);
+//         });
+//     }
+
+//     STYLES_USED.with(|css_set_ref| css_set_ref.borrow_mut().insert(variant_hash));
+// }
+
 pub trait LocalUpdateEl<T> {
     fn update_el(self, el: &mut T);
 }
 
 impl<Ms> LocalUpdateEl<El<Ms>> for Style {
     fn update_el(self, el: &mut El<Ms>) {
-        // log!(el.attrs);
         let rendered_css = self.render();
-
         let do_it = if let Some(AtValue::Some(class_string)) = el.attrs.vals.get(&At::Class) {
             class_string.find("seedstyle-").is_some()
         } else {
@@ -702,6 +1223,7 @@ impl<Ms> LocalUpdateEl<El<Ms>> for Style {
     }
 }
 
+// depreciated for now
 impl<Ms> LocalUpdateEl<El<Ms>> for &[Style] {
     fn update_el(self, el: &mut El<Ms>) {
         let vec_of_rendered_css = self.iter().map(|s| s.render()).collect::<Vec<String>>();
@@ -758,128 +1280,252 @@ fn add_css_to_head_unchecked(css: &str, variant_hash: u64, style: &Style, name: 
         css.to_string()
     };
 
-    let mut full_css = match (&style.media, &style.combinator) {
-        (Some(media), Some(Combinator::Pre(c))) => format!(
-            "{}{{\n.seedstyle-{}{}{}{{\n{}}}}}\n",
-            media,
-            short_hash,
-            c,
-            style.pseudo.render(),
-            css
-        ),
-        (Some(media), Some(Combinator::Post(c))) => format!(
-            "{}{{\n{}.seedstyle-{}{}{{\n{}}}}}\n",
-            media,
-            c,
-            short_hash,
-            style.pseudo.render(),
-            css
-        ),
-        (Some(media), None) => format!(
-            "{}{{\n.seedstyle-{}{}{{\n{}}}}}\n",
-            media,
-            short_hash,
-            style.pseudo.render(),
-            css
-        ),
-        (None, Some(Combinator::Pre(c))) => format!(
-            "\n.seedstyle-{}{}{}{{\n{}}}\n",
-            short_hash,
-            c,
-            style.pseudo.render(),
-            css
-        ),
-        (None, Some(Combinator::Post(c))) => format!(
-            "\n{}.seedstyle-{}{}{{\n{}}}\n",
-            c,
-            short_hash,
-            style.pseudo.render(),
-            css
-        ),
+    let pre_combinators_str = style
+        .pre_combinators
+        .iter()
+        .map(|c| {
+            if let Combinator::Pre(c) = c {
+                format!(".seedstyle-{}{}{}", short_hash, c, style.pseudo.render())
+            } else {
+                String::new()
+            }
+        })
+        .collect::<Vec<String>>()
+        .join(",");
 
-        (None, None) => format!(
-            "\n.seedstyle-{}{}{{\n{}}}\n",
-            short_hash,
-            style.pseudo.render(),
-            css
-        ),
-    };
+    let full_css = if style.pre_combinators.len() > 0 {
+        match &style.media {
+            Some(media) => format!("{}{{\n{}{{\n{}}}}}\n", media, pre_combinators_str, css),
 
-    if let Some(style_elem) = head_elem.get_elements_by_tag_name("style").item(0) {
-        let style_elem = style_elem.dyn_into::<web_sys::HtmlStyleElement>().unwrap();
-        let sheet = style_elem
-            .sheet()
-            .unwrap()
-            .dyn_into::<web_sys::CssStyleSheet>()
-            .unwrap();
-
-        let rules_length = sheet.css_rules().unwrap().length();
-
-        sheet.insert_rule_with_index(&full_css, rules_length);
-    // let existing_style_content = style_elem.inner_html();
-
-    // let new_style_content = format!("{}\n{}", existing_style_content, full_css);
-    // style_elem.set_inner_html(&new_style_content);
+            None => format!("\n{}{{\n{}}}\n", pre_combinators_str, css),
+        }
     } else {
-        let style_elem = document()
-            .create_element("style")
-            .unwrap()
-            .dyn_into::<web_sys::HtmlStyleElement>()
-            .unwrap();
+        match (&style.media, &style.combinator) {
+            (Some(media), Some(Combinator::Pre(c))) => format!(
+                "{}{{\n.seedstyle-{}{}{}{{\n{}}}}}\n",
+                media,
+                short_hash,
+                c,
+                style.pseudo.render(),
+                css
+            ),
+            (Some(media), Some(Combinator::Post(c))) => format!(
+                "{}{{\n.seedstyle-{}{}{}{{\n{}}}}}\n",
+                media,
+                c,
+                short_hash,
+                style.pseudo.render(),
+                css
+            ),
+            (Some(media), None) => format!(
+                "{}{{\n.seedstyle-{}{}{{\n{}}}}}\n",
+                media,
+                short_hash,
+                style.pseudo.render(),
+                css
+            ),
+            (None, Some(Combinator::Pre(c))) => format!(
+                "\n.seedstyle-{}{}{}{{\n{}}}\n",
+                short_hash,
+                c,
+                style.pseudo.render(),
+                css
+            ),
+            (None, Some(Combinator::Post(c))) => format!(
+                "\n.seedstyle-{}{}{}{{\n{}}}\n",
+                c,
+                short_hash,
+                style.pseudo.render(),
+                css
+            ),
 
-        // style_elem.set_inner_html(&full_css);
+            (None, None) => format!(
+                "\n.seedstyle-{}{}{{\n{}}}\n",
+                short_hash,
+                style.pseudo.render(),
+                css
+            ),
+        }
+    };
+    // if style.pre_combinators.len() > 0 {
+    //     log!(full_css);
+    // }
 
-        let style_elem = style_elem.dyn_into::<web_sys::HtmlStyleElement>().unwrap();
-        let sheet = style_elem
-            .sheet()
-            .unwrap()
-            .dyn_into::<web_sys::CssStyleSheet>()
-            .unwrap();
-        let rules_length = sheet.css_rules().unwrap().length();
-        sheet.insert_rule_with_index(&full_css, rules_length);
-        let _ = head_elem.append_child(&style_elem);
+    let css_stylesheet =
+        if let Some(style_elem) = head_elem.get_elements_by_tag_name("style").item(0) {
+            let style_elem = style_elem.dyn_into::<web_sys::HtmlStyleElement>().unwrap();
+            style_elem
+                .sheet()
+                .unwrap()
+                .dyn_into::<web_sys::CssStyleSheet>()
+                .unwrap()
+
+        // let existing_style_content = style_elem.inner_html();
+
+        // let new_style_content = format!("{}\n{}", existing_style_content, full_css);
+        // style_elem.set_inner_html(&new_style_content);
+        } else {
+            let style_elem = document()
+                .create_element("style")
+                .unwrap()
+                .dyn_into::<web_sys::HtmlStyleElement>()
+                .unwrap();
+
+            // style_elem.set_inner_html(&full_css);
+
+            let style_elem = style_elem.dyn_into::<web_sys::HtmlStyleElement>().unwrap();
+            let _ = head_elem.append_child(&style_elem);
+            style_elem
+                .sheet()
+                .unwrap()
+                .dyn_into::<web_sys::CssStyleSheet>()
+                .unwrap()
+        };
+
+    let rules_length = css_stylesheet.css_rules().unwrap().length();
+    let _ = css_stylesheet.insert_rule_with_index(&full_css, rules_length);
+
+    for (media_breakpoint, rule_vec) in &style.media_rules {
+        if style.pre_combinators.len() > 0 {
+            let mut media_string = String::new();
+            media_string.push_str(&format!(
+                "{}{{\n{}{{\n",
+                media_breakpoint, pre_combinators_str
+            ));
+
+            for rule in rule_vec {
+                media_string.push_str(&rule.render());
+            }
+            let rules_length = css_stylesheet.css_rules().unwrap().length();
+            let _ = css_stylesheet.insert_rule_with_index(&media_string, rules_length);
+        } else {
+            let mut media_string = String::new();
+            media_string.push_str(&format!(
+                "{}{{\n.seedstyle-{}{{\n",
+                media_breakpoint, short_hash
+            ));
+
+            for rule in rule_vec {
+                media_string.push_str(&rule.render());
+            }
+            let rules_length = css_stylesheet.css_rules().unwrap().length();
+            let _ = css_stylesheet.insert_rule_with_index(&media_string, rules_length);
+        }
     }
 
-    // for (media_breakpoint, rule_vec) in &style.media_rules {
-    //     full_css.push_str(&format!(
-    //         "{}{{\n.seedstyle-{}{{\n",
-    //         media_breakpoint, short_hash
-    //     ));
-
-    //     for rule in rule_vec {
-    //         full_css.push_str(&rule.render());
-    //     }
-
-    //     full_css.push_str("}\n}\n");
-    // }
-
-    // if !style.keyframes.frames.is_empty() {
-    //     full_css.push_str(&format!(
-    //         "\n\n@keyframes anim-{}{{ \n  {}  \n}}\n",
-    //         short_hash,
-    //         style.keyframes.render()
-    //     ));
-    // }
-
-    // if let Some(style_elem) = head_elem.get_elements_by_tag_name("style").item(0) {
-    // let style_elem = style_elem.dyn_into::<web_sys::HtmlStyleElement>().unwrap();
-
-    // style_elem.insert_rule(, )
-    //     let existing_style_content = style_elem.inner_html();
-
-    //     let new_style_content = format!("{}\n{}", existing_style_content, full_css);
-    //     style_elem.set_inner_html(&new_style_content);
-    // } else {
-    //     let style_elem = document()
-    //         .create_element("style")
-    //         .unwrap()
-    //         .dyn_into::<web_sys::HtmlStyleElement>()
-    //         .unwrap();
-    //     style_elem.set_inner_html(&full_css);
-    //     let _ = head_elem.append_child(&style_elem);
-    // }
+    if !style.keyframes.frames.is_empty() {
+        let rules_length = css_stylesheet.css_rules().unwrap().length();
+        let _ = css_stylesheet.insert_rule_with_index(
+            &format!(
+                "\n\n@keyframes anim-{}{{ \n  {}  \n}}\n",
+                short_hash,
+                style.keyframes.render()
+            ),
+            rules_length,
+        );
+    }
 
     STYLES_USED.with(|css_set_ref| css_set_ref.borrow_mut().insert(variant_hash));
 
     short_hash
+}
+
+#[derive(Default, Debug)]
+pub struct GlobalStyle {
+    pub styles: Vec<(String, Style)>,
+}
+
+impl GlobalStyle {
+    pub fn style(mut self, selector: &str, style: Style) -> GlobalStyle {
+        self.styles.push((selector.to_string(), style));
+        self
+    }
+
+    pub fn activate_init_styles(&self) {
+        do_once(|| {
+            let html_root_class = "seed-init-style ".to_string();
+
+            if let Some(html_root_elem) = document().get_elements_by_tag_name("html").item(0) {
+                if let Some(mut class_name) = html_root_elem.get_attribute("class") {
+                    class_name.push_str(" ");
+                    class_name.push_str(&html_root_class);
+                    let _ = html_root_elem.set_attribute("class", &class_name);
+                } else {
+                    let _ = html_root_elem.set_attribute("class", &format!(" {}", html_root_class));
+                }
+            }
+
+            for (selector, style) in &self.styles {
+                let rendered_css = style.render();
+
+                add_global_init_css_to_head(
+                    &rendered_css,
+                    "global_init",
+                    &style,
+                    &html_root_class,
+                    &selector,
+                );
+            }
+        });
+    }
+
+    pub fn activate_scoped_styles(&self) {
+        let mut style_string = "global".to_string();
+
+        for (selector, style) in &self.styles {
+            let rendered_css = style.render();
+            style_string.push_str(&selector);
+            style_string.push_str(&rendered_css);
+        }
+
+        let mut s = DefaultHasher::new();
+        style_string.hash(&mut s);
+
+        let revised_variant_hash = s.finish();
+        let short_hash = short_uniq_id(revised_variant_hash);
+
+        let html_root_class = format!("seed-global-style-{} ", short_hash);
+
+        if let Some(html_root_elem) = document().get_elements_by_tag_name("html").item(0) {
+            if let Some(mut class_name) = html_root_elem.get_attribute("class") {
+                if let Some(existing_seed_style_position) = class_name.find("seed-global-style-") {
+                    if let Some(terminating_position) =
+                        class_name[existing_seed_style_position..].find(" ")
+                    {
+                        let final_term_pos =
+                            existing_seed_style_position + terminating_position + 1;
+                        class_name.replace_range(
+                            existing_seed_style_position..final_term_pos,
+                            &html_root_class,
+                        )
+                    } else {
+                        class_name.replace_range(existing_seed_style_position.., &html_root_class)
+                    }
+                } else {
+                    class_name.push_str(" ");
+                    class_name.push_str(&html_root_class);
+                }
+                let _ = html_root_elem.set_attribute("class", &format!("{}", &class_name));
+            } else {
+                let _ = html_root_elem.set_attribute("class", &format!(" {}", &html_root_class));
+            }
+        }
+
+        let css_aleady_created =
+            STYLES_USED.with(|css_set_ref| css_set_ref.borrow().contains(&revised_variant_hash));
+
+        if !css_aleady_created {
+            for (selector, style) in &self.styles {
+                let rendered_css = style.render();
+
+                add_global_init_css_to_head(
+                    &rendered_css,
+                    &short_hash,
+                    &style,
+                    &html_root_class,
+                    &selector,
+                );
+            }
+        }
+    }
 }

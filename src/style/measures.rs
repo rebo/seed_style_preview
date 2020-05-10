@@ -81,8 +81,8 @@ impl std::fmt::Display for ExactLength {
 #[derive(Clone, Debug)]
 pub struct Percent(pub f64);
 
-pub fn pc(val: f64) -> Percent {
-    Percent(val)
+pub fn pc<T: Into<f64>>(val: T) -> Percent {
+    Percent(val.into())
 }
 
 impl std::fmt::Display for Percent {

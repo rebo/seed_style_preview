@@ -1,4 +1,6 @@
 use crate::style::css_values::*;
+use crate::style::GlobalStyle;
+
 use crate::style::{CssValueTrait, Rule, Style, UpdateStyle};
 use anymap::any::Any;
 use seed::{prelude::*, *};
@@ -26,16 +28,53 @@ pub trait StyleTheme: Eq + Hash + Clone {}
 pub trait BreakpointTheme: Eq + Hash + Clone {}
 
 #[topo::nested]
-pub fn use_themes<T, Ms, F, Q>(themes: T, content: F) -> Node<Ms>
+pub fn use_themes<T, F, Q, R>(themes: T, content: F) -> R
 where
-    F: FnOnce() -> Node<Ms>,
+    F: FnOnce() -> R,
     T: FnOnce() -> Q,
     Q: Into<Vec<Theme>>,
 {
-    do_once(|| {
-        // set window resize callback
+    let themes: StateAccess<Vec<Theme>> = use_state(|| {
+        let themes = themes().into();
+        for theme in &themes {
+            if let Some(global_style) = &theme.global_styles {
+                global_style.activate_scoped_styles();
+            }
+        }
+        themes
     });
-    let themes: StateAccess<Vec<Theme>> = use_state(|| themes().into());
+
+    illicit::child_env!(  StateAccess<Vec<Theme>>  => themes ).enter(content)
+}
+
+#[topo::nested]
+pub fn use_themes_mut<F, R>(recalc: StateAccess<Option<Vec<Theme>>>, content: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    let current_id = seed_hooks::topo::Id::current();
+
+    recalc.update(|opt_vec_theme| {
+        if opt_vec_theme.is_some() {
+            let replacement_themes = std::mem::replace(opt_vec_theme, None);
+            let replacement_themes = replacement_themes.unwrap();
+
+            for theme in &replacement_themes {
+                if let Some(global_style) = &theme.global_styles {
+                    global_style.activate_scoped_styles();
+                }
+            }
+
+            set_state_with_topo_id(replacement_themes, current_id);
+        }
+    });
+
+    if !state_exists_for_topo_id::<Vec<Theme>>(current_id) {
+        panic!("Theme not provided!");
+    }
+
+    let themes = StateAccess::new(current_id);
+
     illicit::child_env!(  StateAccess<Vec<Theme>>  => themes ).enter(content)
 }
 
@@ -1155,6 +1194,12 @@ generate_froms!([
     (
         "BorderWidthTheme",
         "CssBorderWidth",
+        "CssBorderWidth",
+        "border_widths_scale"
+    ),
+    (
+        "BorderWidthTheme",
+        "CssBorderWidth",
         "CssOutlineRightWidth",
         "border_widths_scale"
     ),
@@ -1458,6 +1503,7 @@ pub struct Theme {
     pub radii_scale: Vec<CssBorderRadius>,
     pub colors_scale: Vec<CssColor>,
     pub shadows_scale: Vec<CssShadow>,
+    pub global_styles: Option<GlobalStyle>,
 }
 
 impl Default for Theme {
@@ -1480,6 +1526,7 @@ impl Default for Theme {
             colors_scale: vec![],
             shadows_scale: vec![],
             radii_scale: vec![],
+            global_styles: None,
         }
     }
 }
@@ -1630,6 +1677,14 @@ impl Theme {
         self
     }
 
+    pub fn border_width_scale<S>(mut self, scale: &[S]) -> Theme
+    where
+        S: Into<CssBorderWidth> + Clone,
+    {
+        self.border_widths_scale = scale.iter().cloned().map(|s| s.into()).collect::<_>();
+        self
+    }
+
     pub fn font_size_scale<S>(mut self, scale: &[S]) -> Theme
     where
         S: Into<CssFontSize> + Clone,
@@ -1638,36 +1693,47 @@ impl Theme {
         self
     }
 
-    pub fn font_weight_scale<S: Into<Vec<CssFontWeight>>>(mut self, scale: S) -> Theme {
-        self.font_weights_scale = scale.into();
+    pub fn font_weight_scale<S>(mut self, scale: &[S]) -> Theme
+    where
+        S: Into<CssFontWeight> + Clone,
+    {
+        self.font_weights_scale = scale.iter().cloned().map(|s| s.into()).collect::<_>();
         self
     }
 
-    pub fn size_scale<S: Into<Vec<CssSize>>>(mut self, scale: S) -> Theme {
-        self.sizes_scale = scale.into();
+    pub fn size_scale<S>(mut self, scale: &[S]) -> Theme
+    where
+        S: Into<CssSize> + Clone,
+    {
+        self.sizes_scale = scale.iter().cloned().map(|s| s.into()).collect::<_>();
         self
     }
 
-    pub fn line_heights_scale<S: Into<Vec<CssLineHeight>>>(mut self, scale: S) -> Theme {
-        self.line_heights_scale = scale.into();
+    pub fn line_height_scale<S>(mut self, scale: &[S]) -> Theme
+    where
+        S: Into<CssLineHeight> + Clone,
+    {
+        self.line_heights_scale = scale.iter().cloned().map(|s| s.into()).collect::<_>();
         self
     }
 
-    pub fn letter_spacing_scale<S: Into<Vec<CssLetterSpacing>>>(mut self, scale: S) -> Theme {
-        self.letter_spacings_scale = scale.into();
+    pub fn letter_spacing_scale<S>(mut self, scale: &[S]) -> Theme
+    where
+        S: Into<CssLetterSpacing> + Clone,
+    {
+        self.letter_spacings_scale = scale.iter().cloned().map(|s| s.into()).collect::<_>();
         self
     }
 
-    pub fn border_scale<S: Into<Vec<CssBorder>>>(mut self, scale: S) -> Theme {
-        self.borders_scale = scale.into();
+    //
+    pub fn border_scale<S>(mut self, scale: &[S]) -> Theme
+    where
+        S: Into<CssBorder> + Clone,
+    {
+        self.borders_scale = scale.iter().cloned().map(|s| s.into()).collect::<_>();
         self
     }
-
-    pub fn border_width_scale<S: Into<Vec<CssBorderWidth>>>(mut self, scale: S) -> Theme {
-        self.border_widths_scale = scale.into();
-        self
-    }
-
+    //
     pub fn breakpoint_scale<S: Into<Vec<u32>>>(mut self, scale: S) -> Theme {
         self.breakpoints_scale = scale.into();
         let mut lower = 0;
@@ -1694,6 +1760,8 @@ impl Theme {
 
         self
     }
+
+    //
 
     pub fn general_get<T, R>(&self, alias: T) -> Option<R>
     where
@@ -1924,6 +1992,11 @@ impl Theme {
             hm.insert(alias, value);
             self.anymap.insert(hm);
         }
+        self
+    }
+
+    pub fn set_global_styles(mut self, global_styles: GlobalStyle) -> Theme {
+        self.global_styles = Some(global_styles);
         self
     }
 }

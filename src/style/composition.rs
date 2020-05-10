@@ -2,6 +2,7 @@ use super::layout::*;
 use super::measures::{pc, px};
 use super::theme::*;
 use super::*;
+use crate::style::s;
 use crate::style::Style;
 use std::collections::HashMap;
 
@@ -10,8 +11,9 @@ where
     T: BreakpointTheme,
     A: LayoutArea,
 {
+    pub container_styles: Vec<Style>,
     pub layouts: Vec<Layout<A>>,
-    pub mocked_children: Option<(String, u32, ExactLength, ExactLength)>,
+    pub mocked_children: Option<(String, u32, CssWidth, CssHeight)>,
     pub children: Vec<Box<dyn Fn(&Mdl) -> Node<Ms> + 'static>>,
     pub default_idx: Option<usize>,
     pub areas_hm: HashMap<A, Box<dyn Fn(&Mdl) -> Node<Ms> + 'static>>,
@@ -25,6 +27,7 @@ where
 {
     fn default() -> Self {
         Self {
+            container_styles: vec![],
             layouts: vec![],
             default_idx: None,
             layouts_hm: HashMap::new(),
@@ -76,13 +79,13 @@ where
         self
     }
 
-    pub fn mock_children(
-        &mut self,
-        name: &str,
-        count: u32,
-        width: ExactLength,
-        height: ExactLength,
-    ) -> &mut Self {
+    pub fn mock_children<W, H>(&mut self, name: &str, count: u32, width: W, height: H) -> &mut Self
+    where
+        W: Into<CssWidth>,
+        H: Into<CssHeight>,
+    {
+        let width = width.into();
+        let height = height.into();
         self.mocked_children = Some((name.to_string(), count, width, height));
         self
     }
@@ -156,6 +159,18 @@ where
         self
     }
 
+    pub fn add_style(&mut self, style: Style) -> &mut Self {
+        self.container_styles.push(style);
+        self
+    }
+
+    pub fn add_styles(&mut self, styles: &[Style]) -> &mut Self {
+        for style in styles {
+            self.add_style(style.clone());
+        }
+        self
+    }
+
     pub fn render_layout(&self, idx: usize, model: &Mdl) -> Node<Ms> {
         let layout = &self.layouts[idx];
         if layout.layout.len() > 0 {
@@ -168,9 +183,10 @@ where
     pub fn render_grid(&self, idx: usize, model: &Mdl) -> Node<Ms> {
         let layout = &self.layouts[idx];
         div![
-            S.grid_template_columns("1 fr ")
+            s().grid_template_columns("1 fr ")
                 .box_sizing("border_box")
                 .display_grid(),
+            self.container_styles,
             if let Some(styles) = &layout.container_styles {
                 styles.clone()
             } else {
@@ -181,7 +197,7 @@ where
                 .map(|child| child(model))
                 .collect::<Vec<Node<Ms>>>(),
             if let Some((name, count, width, height)) = &self.mocked_children {
-                self.mocked_child(name, *count, width, height)
+                self.mocked_child(name, *count, width.clone(), height.clone())
             } else {
                 vec![]
             }
@@ -191,9 +207,11 @@ where
     pub fn render_areas(&self, idx: usize, model: &Mdl) -> Node<Ms> {
         let layout = &self.layouts[idx];
 
-        let number_of_columns = layout.layout.iter().map(|v| v.len()).max().unwrap();
-        let one_frs = std::iter::repeat("1fr ");
-        let grid_template_columns = one_frs.take(number_of_columns).collect::<String>();
+        let number_of_columns = layout.layout.first().unwrap().len();
+        let number_of_rows = layout.layout.len();
+        let one_frs = std::iter::repeat("minmax(0,1fr) ");
+        let grid_template_columns = one_frs.clone().take(number_of_columns).collect::<String>();
+        let grid_template_rows = one_frs.take(number_of_rows).collect::<String>();
 
         let mut grid_template_areas = String::new();
 
@@ -233,10 +251,13 @@ where
         }
 
         div![
-            S.grid_template_columns(grid_template_columns.as_str())
+            s().grid_template_columns(grid_template_columns.as_str())
+                .grid_template_rows(grid_template_rows.as_str())
+                .height(pc(100))
                 .box_sizing("border_box")
                 .display_grid()
                 .grid_template_areas(grid_template_areas.as_str()),
+            self.container_styles,
             if let Some(styles) = &layout.container_styles {
                 styles.clone()
             } else {
@@ -259,7 +280,7 @@ where
                 ]
             }),
             if let Some((name, count, width, height)) = &self.mocked_children {
-                self.mocked_child(name, *count, width, height)
+                self.mocked_child(name, *count, width.clone(), height.clone())
             } else {
                 vec![]
             }
@@ -268,7 +289,7 @@ where
 
     pub fn mock(&self, area: A, gtc: &str, gtr: &str) -> Node<Ms> {
         div![
-            S.box_sizing_border_box()
+            s().box_sizing_border_box()
                 .text_align_center()
                 .p(px(30))
                 .height(pc(100.))
@@ -281,28 +302,35 @@ where
                 .border_color(seed_colors::Gray::No7)
                 .bg_color(seed_colors::Gray::No5),
             h1![
-                S.font_size(px(24)),
+                s().font_size(px(24)),
                 format!("{:?} ", area).replace("::", "__")
             ],
-            p![S.color(seed_colors::Gray::No8), format!("cols: ({})", gtc)],
-            p![S.color(seed_colors::Gray::No8), format!("rows: ({})", gtr)],
+            p![
+                s().color(seed_colors::Gray::No8),
+                format!("cols: ({})", gtc)
+            ],
+            p![
+                s().color(seed_colors::Gray::No8),
+                format!("rows: ({})", gtr)
+            ],
         ]
     }
 
-    pub fn mocked_child(
-        &self,
-        name: &str,
-        count: u32,
-        width: &ExactLength,
-        height: &ExactLength,
-    ) -> Vec<Node<Ms>> {
+    pub fn mocked_child<W, H>(&self, name: &str, count: u32, width: W, height: H) -> Vec<Node<Ms>>
+    where
+        W: Into<CssWidth>,
+        H: Into<CssHeight>,
+    {
+        let width = width.into();
+        let height = height.into();
         (0..count)
             .into_iter()
             .map(|i| {
                 div![
-                    S.box_sizing_border_box()
+                    s().box_sizing_border_box()
                         .w(width.clone())
                         .h(height.clone())
+                        .max_width(pc(100))
                         .text_align_center()
                         .p(px(30))
                         .border_style_dashed()
@@ -313,10 +341,10 @@ where
                         .justify_content_center()
                         .border_color(seed_colors::Gray::No7)
                         .bg_color(seed_colors::Red::No4),
-                    h1![S.font_size(px(24)), format!("Mocked {} No.{} ", name, i)],
+                    h1![s().font_size(px(24)), format!("Mocked {} No.{} ", name, i)],
                     p![
-                        S.color(seed_colors::Gray::No8),
-                        format!("({} × {} )", width, height)
+                        s().color(seed_colors::Gray::No8),
+                        format!("({} × {} ), max-width: 100%;", width, height)
                     ],
                 ]
             })

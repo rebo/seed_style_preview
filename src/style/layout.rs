@@ -2,8 +2,6 @@ use super::*;
 use crate::style::Style;
 // use seed::{prelude::*, *};
 use std::collections::HashMap;
-use std::marker::PhantomData;
-
 
 #[derive(Default, Clone)]
 pub struct Layout<A>
@@ -14,7 +12,6 @@ where
     pub layout: Vec<Vec<A>>,
     pub container_styles: Option<Style>,
     pub area_styles: HashMap<A, Style>,
-    pub _phantom_data: PhantomData<A>,
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
@@ -56,7 +53,6 @@ where
             layout,
             container_styles: None,
             area_styles: HashMap::new(),
-            _phantom_data: PhantomData,
         }
     }
 
@@ -66,9 +62,12 @@ where
             layout: vec![],
             container_styles: None,
             area_styles: HashMap::new(),
-            _phantom_data: PhantomData::<NoArea>,
         }
     }
+}
+
+pub fn layout_grid(style: Style) -> Layout<NoArea> {
+    Layout::<NoArea>::grid().style(style)
 }
 
 pub trait LayoutArea: Hash + PartialEq + Eq + std::fmt::Debug + Clone + 'static {

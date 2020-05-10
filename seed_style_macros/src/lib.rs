@@ -63,28 +63,28 @@ pub fn expand(input: TokenStream) -> TokenStream {
         (
             quote!(
                 #[track_caller]
-                fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name> ;
+                fn #snake_case_type_ident<T>(self, val:T) -> Style  where T: UpdateStyle<#css_type_name> ;
 
                  #[track_caller]
-                 fn #short_prop_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name>;
+                 fn #short_prop_ident<T>(self, val:T) -> Style  where T: UpdateStyle<#css_type_name>;
             ),
             quote!(
 
             #[track_caller]
-            fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name> {
-                let mut new_style = self.clone();
-                new_style.updated_at.push(format!("{}", Location::caller()));
-                val.update_style(&mut new_style);
-                new_style
+            fn #snake_case_type_ident<T>(mut self, val:T) -> Style  where T: UpdateStyle<#css_type_name> {
+
+                self.updated_at.push(format!("{}", Location::caller()));
+                val.update_style(&mut self);
+                self
 
              }
 
              #[track_caller]
-             fn #short_prop_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name> {
-                let mut new_style = self.clone();
-                new_style.updated_at.push(format!("{}", Location::caller()));
-                 val.update_style(&mut new_style);
-                 new_style
+             fn #short_prop_ident<T>(mut self, val:T) -> Style  where T: UpdateStyle<#css_type_name> {
+
+                self.updated_at.push(format!("{}", Location::caller()));
+                val.update_style(&mut self);
+                 self
               }
             ),
         )
@@ -93,17 +93,17 @@ pub fn expand(input: TokenStream) -> TokenStream {
             quote!(
 
             #[track_caller]
-            fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name>;
+            fn #snake_case_type_ident<T>(self, val:T) -> Style  where T: UpdateStyle<#css_type_name>;
 
             ),
             quote!(
 
             #[track_caller]
-            fn #snake_case_type_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#css_type_name> {
-                let mut new_style = self.clone();
-                new_style.updated_at.push(format!("{}", Location::caller()));
-                val.update_style(&mut  new_style);
-                new_style
+            fn #snake_case_type_ident<T>(mut self, val:T) -> Style  where T: UpdateStyle<#css_type_name> {
+
+                self.updated_at.push(format!("{}", Location::caller()));
+                val.update_style(&mut self);
+                self
              }
 
             ),
@@ -258,13 +258,13 @@ pub fn expand(input: TokenStream) -> TokenStream {
                 if let Some(short_prop) = short_prop.clone() {
                     let short_prop_ident = format_ident!("{}_{}", short_prop, snake_case_variant);
                     quote! {
-                        fn #f_small_name_ident(&self) -> Style;
-                        fn #short_prop_ident(&self) -> Style;
+                        fn #f_small_name_ident(self) -> Style;
+                        fn #short_prop_ident(self) -> Style;
 
                     }
                 } else {
                     quote! {
-                        fn #f_small_name_ident(&self) -> Style;
+                        fn #f_small_name_ident(self) -> Style;
                     }
                 }
             });
@@ -299,30 +299,30 @@ pub fn expand(input: TokenStream) -> TokenStream {
                     let short_prop_ident = format_ident!("{}_{}", short_prop, snake_case_variant);
                     quote! {
                         #[track_caller]
-                        fn #short_prop_ident(&self) -> Style {
-                            let mut new_style = self.clone();
+                        fn #short_prop_ident(mut self) -> Style {
 
-                            new_style.updated_at.push(format!("{}", Location::caller()));
-                            new_style.add_rule(Box::new(#css_type_name :: #f_big_name));
-                            new_style
+
+                            self.updated_at.push(format!("{}", Location::caller()));
+                            self.add_rule(Box::new(#css_type_name :: #f_big_name));
+                            self
                         }
                         #[track_caller]
-                            fn #f_small_name_ident(&self) -> Style {
-                            let mut new_style = self.clone();
+                            fn #f_small_name_ident(mut self) -> Style {
 
-                            new_style.updated_at.push(format!("{}", Location::caller()));
-                            new_style.add_rule(Box::new(#css_type_name :: #f_big_name));
-                            new_style
+
+                            self.updated_at.push(format!("{}", Location::caller()));
+                            self.add_rule(Box::new(#css_type_name :: #f_big_name));
+                            self
                         }
                     }
                 } else {
                     quote! {
                         #[track_caller]
-                        fn #f_small_name_ident(&self) -> Style {
-                            let mut new_style = self.clone();
-                            new_style.updated_at.push(format!("{}", Location::caller()));
-                            new_style.add_rule(Box::new(#css_type_name :: #f_big_name));
-                            new_style
+                        fn #f_small_name_ident(mut self) -> Style {
+
+                            self.updated_at.push(format!("{}", Location::caller()));
+                            self.add_rule(Box::new(#css_type_name :: #f_big_name));
+                            self
                         }
 
                     }
@@ -533,11 +533,11 @@ pub fn create_pseudos(input: TokenStream) -> TokenStream {
 
 
                 #[track_caller]
-                pub fn #fname(&self) -> Style {
-                    let mut new_style = self.clone();
-                    new_style.updated_at.push(format!("{}", Location::caller()));
-                    new_style.pseudo = Pseudo::#pseudoname;
-                    new_style
+                pub fn #fname(mut self) -> Style {
+
+                    self.updated_at.push(format!("{}", Location::caller()));
+                    self.pseudo = Pseudo::#pseudoname;
+                    self
                 }
 
                 };

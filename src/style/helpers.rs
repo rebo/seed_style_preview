@@ -1,5 +1,5 @@
 use super::theme::*;
-use seed::{prelude::*,*};
+use seed::{prelude::*, *};
 use seed_hooks::use_state;
 use std::collections::HashMap;
 
@@ -34,7 +34,8 @@ pub fn conditionally_skip_rendering<
                     (lower, Some(higher)) => window()
                         .match_media(&format!(
                             "(min-width: {}px) and (max-width: {}px",
-                            lower, higher
+                            lower,
+                            higher - 1
                         ))
                         .unwrap()
                         .unwrap()
@@ -61,7 +62,8 @@ pub fn conditionally_skip_rendering<
                         (lower, Some(higher)) => window()
                             .match_media(&format!(
                                 "(min-width: {}px) and (max-width: {}px)",
-                                lower, higher
+                                lower,
+                                higher - 1
                             ))
                             .unwrap()
                             .unwrap()

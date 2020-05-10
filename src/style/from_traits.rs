@@ -259,6 +259,13 @@ impl From<ExactLength> for CssPaddingTop {
         Self::Length(v)
     }
 }
+impl From<Percent> for CssBorderRadius {
+    fn from(v: Percent) -> Self {
+        Self::Percentage(v)
+    }
+}
+
+
 
 impl From<Percent> for CssSpace {
     fn from(v: Percent) -> Self {
