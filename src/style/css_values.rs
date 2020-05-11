@@ -463,6 +463,8 @@ pub enum CssPageBreak {
 #[short_prop = "pos"]
 #[display(fmt = "position: {};")]
 pub enum CssPosition {
+    #[display(fmt = "sticky")]
+    Sticky,
     #[display(fmt = "static")]
     Static,
     #[display(fmt = "relative")]
@@ -737,53 +739,53 @@ pub enum CssSpace {
     StringValue(String),
 }
 
-// #[derive(Display, Clone, Debug, CssStyleMacro)]
-// #[display(fmt = "top: {};")]
-// pub enum CssTop {
-//     Length(ExactLength),
-//     Percentage(Percent),
-//     #[display(fmt = "auto")]
-//     Auto,
-//     #[display(fmt = "inherit")]
-//     Inherit,
-//     StringValue(String),
-// }
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "top: {};")]
+pub enum CssTop {
+    Length(ExactLength),
+    Percentage(Percent),
+    #[display(fmt = "auto")]
+    Auto,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
 
-// #[derive(Display, Clone, Debug, CssStyleMacro)]
-// #[display(fmt = "bottom: {};")]
-// pub enum CssBottom {
-//     Length(ExactLength),
-//     Percentage(Percent),
-//     #[display(fmt = "auto")]
-//     Auto,
-//     #[display(fmt = "inherit")]
-//     Inherit,
-//     StringValue(String),
-// }
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "bottom: {};")]
+pub enum CssBottom {
+    Length(ExactLength),
+    Percentage(Percent),
+    #[display(fmt = "auto")]
+    Auto,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
 
-// #[derive(Display, Clone, Debug, CssStyleMacro)]
-// #[display(fmt = "left: {};")]
-// pub enum CssLeft {
-//     Length(ExactLength),
-//     Percentage(Percent),
-//     #[display(fmt = "auto")]
-//     Auto,
-//     #[display(fmt = "inherit")]
-//     Inherit,
-//     StringValue(String),
-// }
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "left: {};")]
+pub enum CssLeft {
+    Length(ExactLength),
+    Percentage(Percent),
+    #[display(fmt = "auto")]
+    Auto,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
 
-// #[derive(Display, Clone, Debug, CssStyleMacro)]
-// #[display(fmt = "right: {};")]
-// pub enum CssRight {
-//     Length(ExactLength),
-//     Percentage(Percent),
-//     #[display(fmt = "auto")]
-//     Auto,
-//     #[display(fmt = "inherit")]
-//     Inherit,
-//     StringValue(String),
-// }
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "right: {};")]
+pub enum CssRight {
+    Length(ExactLength),
+    Percentage(Percent),
+    #[display(fmt = "auto")]
+    Auto,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[display(fmt = "grid-gap: {};")]
@@ -2346,6 +2348,8 @@ pub enum CssDisplay {
     Flex,
     #[display(fmt = "grid")]
     Grid,
+    #[display(fmt = "hidden")]
+    Hidden,
     #[display(fmt = "inline-block")]
     InlineBlock,
     #[display(fmt = "inline=flex")]
