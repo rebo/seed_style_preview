@@ -1,6 +1,6 @@
 [package]
 name = "seed_style_preview"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["rebo"]
 edition = "2018"
 description = "CSS Styling for Seed web apps"
