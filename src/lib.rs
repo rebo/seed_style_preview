@@ -10,7 +10,7 @@ pub use style::s;
 // style property argument trait
 pub use style::{
     // exports for Seed Layout
-    composition::{Composition,SeedBreakpoint,WithLayoutComposition },
+    composition::{default_bp_theme, Composition, SeedBreakpoint, WithLayoutComposition},
     // Css Values
     css_values::*,
     // resizing
