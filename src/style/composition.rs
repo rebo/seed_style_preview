@@ -59,6 +59,7 @@ pub fn default_bp_theme() -> Theme {
         .set_breakpoint(Medium, (960, Some(1280)))
         .set_breakpoint(Large, (1280, Some(1920)))
         .set_breakpoint(ExtraLarge, (1920, None))
+        .breakpoint_scale([600, 960, 1280, 1920]) // standard-material-ui breakpoints
 }
 
 pub trait WithLayoutComposition<A, Mdl, Ms>
