@@ -1,14 +1,15 @@
 use crate::style::css_values::*;
-use crate::style::GlobalStyle;
-
+use crate::style::ReturnBpScale;
+use crate::style::ReturnBpTuple;
 use crate::style::{CssValueTrait, Rule, Style, UpdateStyle};
 use anymap::any::Any;
 use seed::{prelude::*, *};
+use seed_hooks::*;
 use seed_style_macros::generate_froms;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::Hash;
-
-use seed_hooks::*;
+use std::marker::PhantomData;
 pub trait BorderTheme: Eq + Hash + Clone {}
 pub trait BorderWidthTheme: Eq + Hash + Clone {}
 pub trait BorderStyleTheme: Eq + Hash + Clone {}
@@ -27,6 +28,10 @@ pub trait ShadowTheme: Eq + Hash + Clone {}
 pub trait StyleTheme: Eq + Hash + Clone {}
 pub trait BreakpointTheme: Eq + Hash + Clone {}
 
+thread_local! {
+    static THEMES_VEC : RefCell<Vec<Theme>> = RefCell::new(vec![]);
+}
+
 #[topo::nested]
 pub fn use_themes<T, F, Q, R>(themes: T, content: F) -> R
 where
@@ -34,48 +39,57 @@ where
     T: FnOnce() -> Q,
     Q: Into<Vec<Theme>>,
 {
-    let themes: StateAccess<Vec<Theme>> = use_state(|| {
-        let themes = themes().into();
-        for theme in &themes {
-            if let Some(global_style) = &theme.global_styles {
-                global_style.activate_scoped_styles();
+    let inner_themes = use_state(|| {
+        // We need access to the global themes
+        THEMES_VEC.with(|global_vt| {
+            let mut new_inner_themes = themes().into();
+            let mut new_inner_theme_idxs =
+                if let Some(outer_themes_access) = illicit::Env::get::<StateAccess<Vec<usize>>>() {
+                    let outer = outer_themes_access.get(); // cloning because we need it
+                    new_inner_themes.retain(|inner| {
+                        outer
+                            .iter()
+                            .find(|idx| {
+                                THEMES_VEC
+                                    .with(|global_vt| global_vt.borrow()[**idx].name == inner.name)
+                            })
+                            .is_none()
+                    });
+                    outer
+                } else {
+                    vec![]
+                };
+            let global_len = global_vt.borrow().len();
+            for idx in global_len..new_inner_themes.len() + global_len {
+                new_inner_theme_idxs.push(idx);
             }
-        }
-        themes
-    });
 
-    illicit::child_env!(  StateAccess<Vec<Theme>>  => themes ).enter(content)
-}
-
-#[topo::nested]
-pub fn use_themes_mut<F, R>(recalc: StateAccess<Option<Vec<Theme>>>, content: F) -> R
-where
-    F: FnOnce() -> R,
-{
-    let current_id = seed_hooks::topo::Id::current();
-
-    recalc.update(|opt_vec_theme| {
-        if opt_vec_theme.is_some() {
-            let replacement_themes = std::mem::replace(opt_vec_theme, None);
-            let replacement_themes = replacement_themes.unwrap();
-
-            for theme in &replacement_themes {
-                if let Some(global_style) = &theme.global_styles {
-                    global_style.activate_scoped_styles();
+            for theme in new_inner_themes.drain(..) {
+                if !global_vt.borrow().iter().any(|t| t.name == theme.name) {
+                    global_vt.borrow_mut().push(theme);
                 }
             }
 
-            set_state_with_topo_id(replacement_themes, current_id);
-        }
+            new_inner_theme_idxs
+        })
     });
 
-    if !state_exists_for_topo_id::<Vec<Theme>>(current_id) {
-        panic!("Theme not provided!");
+    // no need to run in new illicit context if theme idx already in current context exists.
+    if inner_themes.get_with(|v_t| v_t.len()) > 0 {
+        illicit::child_env!(  StateAccess<Vec<usize>>  => inner_themes ).enter(content)
+    } else {
+        content()
     }
+}
 
-    let themes = StateAccess::new(current_id);
-
-    illicit::child_env!(  StateAccess<Vec<Theme>>  => themes ).enter(content)
+pub fn change_theme_with_name(name: &str, theme: Theme) {
+    THEMES_VEC.with(|global_vt| {
+        if let Some(existing_theme) = global_vt.borrow_mut().iter_mut().find(|t| &t.name == name) {
+            let _old_theme = std::mem::replace(existing_theme, theme);
+        } else {
+            panic!("old theme doesnt exist");
+        }
+    });
 }
 
 impl From<CssSize> for CssWidth {
@@ -1033,6 +1047,8 @@ impl From<CssShadow> for CssBoxShadow {
     }
 }
 
+struct ReturnThemeValFromUsize<T: CssValueTrait>(usize, PhantomData<T>);
+
 generate_froms!([
     (
         "FontSizeTheme",
@@ -1297,12 +1313,8 @@ generate_froms!([
         "colors_scale"
     ),
     ("ColorTheme", "CssColor", "CssFill", "colors_scale"),
-    ("ColorTheme", "CssColor", "CssStroke", "colors_scale",)(
-        "ShadowTheme",
-        "CssShadow",
-        "CssBoxShadow",
-        "shadows_scale"
-    ),
+    ("ColorTheme", "CssColor", "CssStroke", "colors_scale",),
+    ("ShadowTheme", "CssShadow", "CssBoxShadow", "shadows_scale"),
     ("ShadowTheme", "CssShadow", "CssTextShadow", "shadows_scale"),
 ]);
 
@@ -1329,13 +1341,7 @@ where
     T: BreakpointTheme + 'static,
     F: Fn() -> Node<Ms>,
 {
-    let bp_pair = with_themes(|borrowed_themes| {
-        borrowed_themes
-            .iter()
-            .find_map(|theme| theme.get::<T, (u32, Option<u32>)>(bp.clone()))
-            .unwrap()
-    });
-
+    let bp_pair = with_themes(ReturnBpTuple(bp));
     match bp_pair {
         (_lower, Some(higher)) => {
             if window()
@@ -1358,13 +1364,7 @@ where
     T: BreakpointTheme + 'static,
     F: Fn() -> Node<Ms>,
 {
-    let bp_pair = with_themes(|borrowed_themes| {
-        borrowed_themes
-            .iter()
-            .find_map(|theme| theme.get::<T, (u32, Option<u32>)>(bp.clone()))
-            .unwrap()
-    });
-
+    let bp_pair = with_themes(ReturnBpTuple(bp));
     match bp_pair {
         (lower, Some(_higher)) => {
             if window()
@@ -1398,13 +1398,7 @@ where
     T: BreakpointTheme + 'static,
     F: Fn() -> Node<Ms>,
 {
-    let bp_pair = with_themes(|borrowed_themes| {
-        borrowed_themes
-            .iter()
-            .find_map(|theme| theme.get::<T, (u32, Option<u32>)>(bp.clone()))
-            .unwrap()
-    });
-
+    let bp_pair = with_themes(ReturnBpTuple(bp));
     match bp_pair {
         (lower, Some(higher)) => {
             if window()
@@ -1441,12 +1435,7 @@ where
     T: BreakpointTheme + 'static,
     F: Fn() -> Node<Ms>,
 {
-    let bp_pair = with_themes(|borrowed_themes| {
-        borrowed_themes
-            .iter()
-            .find_map(|theme| theme.get::<T, (u32, Option<u32>)>(bp.clone()))
-            .unwrap()
-    });
+    let bp_pair = with_themes(ReturnBpTuple(bp));
 
     match bp_pair {
         (lower, Some(higher)) => {
@@ -1473,19 +1462,36 @@ where
     }
 }
 
+pub trait ActOnIteratorOfThemes<R> {
+    fn call<'a, It>(&self, it: It) -> R
+    where
+        It: Iterator<Item = &'a Theme>;
+}
+
 pub fn with_themes<Q, R>(with: Q) -> R
 where
-    Q: Fn(&Vec<Theme>) -> R,
+    Q: ActOnIteratorOfThemes<R>,
 {
-    if let Some(themes) = illicit::Env::get::<StateAccess<Vec<Theme>>>() {
-        themes.get_with(|borrowed_theme| with(borrowed_theme))
+    if let Some(themes_idxs) = illicit::Env::get::<StateAccess<Vec<usize>>>() {
+        themes_idxs.get_with(|theme_idxs| {
+            THEMES_VEC.with(|global_v_t| {
+                with.call(global_v_t.borrow().iter().enumerate().filter_map(|(x, b)| {
+                    if theme_idxs.contains(&x) {
+                        Some(b)
+                    } else {
+                        None
+                    }
+                }))
+            })
+        })
     } else {
-        with(vec![].as_ref())
+        with.call(std::iter::empty::<&Theme>())
     }
 }
 
 #[derive(Debug)]
 pub struct Theme {
+    pub name: String,
     pub anymap: anymap::Map<dyn Any>,
     pub spaces_scale: Vec<CssSpace>,
     pub font_sizes_scale: Vec<CssFontSize>,
@@ -1503,12 +1509,12 @@ pub struct Theme {
     pub radii_scale: Vec<CssBorderRadius>,
     pub colors_scale: Vec<CssColor>,
     pub shadows_scale: Vec<CssShadow>,
-    pub global_styles: Option<GlobalStyle>,
 }
 
 impl Default for Theme {
     fn default() -> Self {
         Theme {
+            name: "".to_string(),
             anymap: anymap::Map::<dyn Any>::new(),
             spaces_scale: vec![],
             font_sizes_scale: vec![],
@@ -1526,7 +1532,6 @@ impl Default for Theme {
             colors_scale: vec![],
             shadows_scale: vec![],
             radii_scale: vec![],
-            global_styles: None,
         }
     }
 }
@@ -1665,8 +1670,11 @@ impl<Q: 'static + BreakpointTheme> OverloadedStyleLookUp<Q, (u32, Option<u32>)> 
 }
 
 impl Theme {
-    pub fn new() -> Theme {
-        Theme::default()
+    pub fn new(name: &str) -> Theme {
+        Theme {
+            name: name.into(),
+            ..Theme::default()
+        }
     }
 
     pub fn space_scale<S>(mut self, scale: &[S]) -> Theme
@@ -1790,6 +1798,23 @@ impl Theme {
             hm.insert(alias, value);
         } else {
             let mut hm = HashMap::<Q, CssSize>::new();
+            hm.insert(alias, value);
+            self.anymap.insert(hm);
+        }
+        self
+    }
+
+    pub fn set_shadow<T, Q>(mut self, alias: Q, value: T) -> Theme
+    where
+        T: Into<CssShadow>,
+        Q: 'static + ShadowTheme,
+    {
+        let value = value.into();
+
+        if let Some(hm) = self.anymap.get_mut::<HashMap<Q, CssShadow>>() {
+            hm.insert(alias, value);
+        } else {
+            let mut hm = HashMap::<Q, CssShadow>::new();
             hm.insert(alias, value);
             self.anymap.insert(hm);
         }
@@ -1994,11 +2019,6 @@ impl Theme {
         }
         self
     }
-
-    pub fn set_global_styles(mut self, global_styles: GlobalStyle) -> Theme {
-        self.global_styles = Some(global_styles);
-        self
-    }
 }
 
 impl<T> From<T> for Style
@@ -2006,12 +2026,24 @@ where
     T: StyleTheme + 'static,
 {
     fn from(v: T) -> Self {
-        with_themes(|borrowed_themes| {
-            borrowed_themes
-                .iter()
-                .find_map(|theme| theme.get::<T, Style>(v.clone()))
-                .unwrap_or_default()
-        })
+        with_themes(ReturnStyle(v))
+    }
+}
+
+struct ReturnStyle<T>(T)
+where
+    T: StyleTheme + 'static;
+
+impl<T> ActOnIteratorOfThemes<Style> for ReturnStyle<T>
+where
+    T: StyleTheme + 'static,
+{
+    fn call<'a, It>(&self, mut it: It) -> Style
+    where
+        It: Iterator<Item = &'a Theme>,
+    {
+        it.find_map(|theme| theme.get::<T, Style>(self.0.clone()))
+            .unwrap()
     }
 }
 

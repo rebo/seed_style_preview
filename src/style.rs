@@ -9,27 +9,26 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::panic::Location;
 use wasm_bindgen::JsCast;
-mod css_values;
+
+pub mod css_values;
 pub use css_values::*;
+
 pub mod measures;
-pub use measures::*;
-mod theme;
-pub use theme::*;
+
+pub mod theme;
+use theme::*;
 
 pub mod composition;
-pub mod helpers;
+
 pub mod layout;
 
-pub use composition::*;
-pub use helpers::*;
-pub use layout::*;
+pub mod helpers;
 
 pub mod presets;
-pub use presets::style_presets;
-pub use presets::*;
+
+use presets::*;
 
 mod from_traits;
-pub use from_traits::*;
 
 use std::collections::HashMap;
 
@@ -118,45 +117,52 @@ where
     }
 }
 
+struct ReturnBpScale;
+
+impl ActOnIteratorOfThemes<Option<Vec<CssMedia>>> for ReturnBpScale {
+    fn call<'a, It>(&self, mut it: It) -> Option<Vec<CssMedia>>
+    where
+        It: Iterator<Item = &'a Theme>,
+    {
+        it.find_map(|theme| {
+            if !theme.media_bp_scale.is_empty() {
+                Some(theme.media_bp_scale.clone())
+            } else {
+                None
+            }
+        })
+    }
+}
+
 impl<R, P> UpdateStyle<P> for &[R]
 where
     R: Into<P> + Clone,
     P: 'static + Clone + CssValueTrait,
 {
     fn update_style(self, style: &mut Style) {
-        *style = with_themes(|borrowed_themes| {
-            let mut new_style = style.clone();
-            if let Some(bp_scale) = &borrowed_themes.iter().find_map(|theme| {
-                if !theme.media_bp_scale.is_empty() {
-                    Some(theme.media_bp_scale.clone())
+        if let Some(bp_scale) = with_themes(ReturnBpScale) {
+            let mut old_style = None;
+
+            for (style_idx, bp) in bp_scale.iter().enumerate() {
+                if let Some(item) = self.get(style_idx) {
+                    let specific_value: P = item.clone().into();
+
+                    let rules = style.media_rules.entry(bp.clone().0).or_insert(vec![]);
+                    rules.push(Rule {
+                        value: Box::new(specific_value.clone()),
+                    });
+
+                    old_style = Some(specific_value);
                 } else {
-                    None
+                    let rules = style.media_rules.entry(bp.clone().0).or_insert(vec![]);
+                    rules.push(Rule {
+                        value: Box::new(old_style.clone().unwrap()),
+                    });
                 }
-            }) {
-                let mut old_style = None;
-
-                for (style_idx, bp) in bp_scale.iter().enumerate() {
-                    if let Some(item) = self.get(style_idx) {
-                        let specific_value: P = item.clone().into();
-
-                        let rules = new_style.media_rules.entry(bp.clone().0).or_insert(vec![]);
-                        rules.push(Rule {
-                            value: Box::new(specific_value.clone()),
-                        });
-
-                        old_style = Some(specific_value);
-                    } else {
-                        let rules = new_style.media_rules.entry(bp.clone().0).or_insert(vec![]);
-                        rules.push(Rule {
-                            value: Box::new(old_style.clone().unwrap()),
-                        });
-                    }
-                }
-            } else {
-                panic!("No breakpoints have been defined!")
             }
-            new_style
-        });
+        } else {
+            panic!("No breakpoints have been defined!")
+        };
     }
 }
 impl<R, P> UpdateStyle<P> for &[R; 2]
@@ -380,19 +386,19 @@ impl Style {
         self.margin_top(val.clone()).margin_bottom(val)
     }
 
-    #[track_caller]
-    pub fn add_style<T>(mut self, val: T) -> Style
-    where
-        T: Into<Style>,
-    {
-        let val = val.into();
+    // #[track_caller]
+    // pub fn add_style<T>(mut self, val: T) -> Style
+    // where
+    //     T: Into<Style>,
+    // {
+    //     let val = val.into();
 
-        self.updated_at.push(format!("{}", Location::caller()));
-        for rule in &val.rules {
-            self.add_rule(rule.value.clone())
-        }
-        self
-    }
+    //     self.updated_at.push(format!("{}", Location::caller()));
+    //     for rule in &val.rules {
+    //         self.add_rule(rule.value.clone())
+    //     }
+    //     self
+    // }
 
     fn add_rule(&mut self, value: Box<dyn CssValueTrait>) {
         self.rules.push(Rule {
@@ -572,12 +578,7 @@ impl Style {
     where
         T: BreakpointTheme + 'static,
     {
-        let bp_pair = with_themes(|borrowed_themes| {
-            borrowed_themes
-                .iter()
-                .find_map(|theme| theme.get::<T, (u32, Option<u32>)>(bp.clone()))
-                .unwrap()
-        });
+        let bp_pair = with_themes(ReturnBpTuple(bp));
 
         match bp_pair {
             (_lower, Some(higher)) => self.media(&format!("@media (max-width: {}px)", higher - 1)),
@@ -589,12 +590,7 @@ impl Style {
     where
         T: BreakpointTheme + 'static,
     {
-        let bp_pair = with_themes(|borrowed_themes| {
-            borrowed_themes
-                .iter()
-                .find_map(|theme| theme.get::<T, (u32, Option<u32>)>(bp.clone()))
-                .unwrap()
-        });
+        let bp_pair = with_themes(ReturnBpTuple(bp));
 
         match bp_pair {
             (lower, Some(higher)) => self.media(&format!(
@@ -610,12 +606,7 @@ impl Style {
     where
         T: BreakpointTheme + 'static,
     {
-        let bp_pair = with_themes(|borrowed_themes| {
-            borrowed_themes
-                .iter()
-                .find_map(|theme| theme.get::<T, (u32, Option<u32>)>(bp.clone()))
-                .unwrap()
-        });
+        let bp_pair = with_themes(ReturnBpTuple(bp));
 
         match bp_pair {
             (lower, Some(_higher)) => self.media(&format!("@media (min-width:{}px)", lower)),
@@ -627,12 +618,7 @@ impl Style {
     where
         T: BreakpointTheme + 'static,
     {
-        let bp_pair = with_themes(|borrowed_themes| {
-            borrowed_themes
-                .iter()
-                .find_map(|theme| theme.get::<T, (u32, Option<u32>)>(bp.clone()))
-                .unwrap()
-        });
+        let bp_pair = with_themes(ReturnBpTuple(bp));
 
         match bp_pair {
             (lower, Some(higher)) => self.media(&format!(
@@ -657,6 +643,88 @@ impl Style {
         }
 
         style
+    }
+
+    #[track_caller]
+    pub fn custom_style<T>(mut self, val: T) -> Style
+    where
+        T: UpdateCustomStyle,
+    {
+        self.updated_at.push(format!("{}", Location::caller()));
+        val.update_style(&mut self);
+        self
+    }
+}
+
+pub trait UpdateCustomStyle {
+    fn update_style(self, style: &mut Style);
+}
+
+impl UpdateCustomStyle for Style {
+    fn update_style(self, style: &mut Style) {
+        for rule in &self.rules {
+            style.add_rule(rule.value.clone());
+        }
+
+        for (key, value) in &self.media_rules {
+            style.media_rules.insert(key.clone(), value.clone());
+        }
+
+        style.pseudo = self.pseudo.clone();
+
+        style.media = self.media.clone();
+
+        style.name = self.name.clone();
+
+        style.keyframes = self.keyframes.clone();
+
+        style.combinator = self.combinator.clone();
+
+        style.pre_combinators = self.pre_combinators.clone();
+    }
+}
+
+struct ReturnSpecificStyleFromStyleTheme<T: StyleTheme + 'static>(T);
+
+impl<Th> UpdateCustomStyle for Th
+where
+    Th: StyleTheme + 'static,
+{
+    fn update_style(self, style: &mut Style)
+    where
+        Th: StyleTheme + 'static,
+    {
+        let theme_style = with_themes(ReturnSpecificStyleFromStyleTheme(self)).unwrap();
+        theme_style.update_style(style);
+    }
+}
+
+impl<T> ActOnIteratorOfThemes<Option<Style>> for ReturnSpecificStyleFromStyleTheme<T>
+where
+    T: StyleTheme + 'static,
+{
+    fn call<'a, It>(&self, mut it: It) -> Option<Style>
+    where
+        It: Iterator<Item = &'a Theme>,
+    {
+        it.find_map(|theme| theme.get::<T, Style>(self.0.clone()))
+    }
+}
+
+struct ReturnBpTuple<T>(T)
+where
+    T: BreakpointTheme + 'static;
+
+impl<T> ActOnIteratorOfThemes<(u32, Option<u32>)> for ReturnBpTuple<T>
+where
+    T: BreakpointTheme + 'static,
+{
+    fn call<'a, It>(&self, mut it: It) -> (u32, Option<u32>)
+    where
+        It: Iterator<Item = &'a Theme>,
+    {
+        it.find_map(|theme| theme.get::<T, (u32, Option<u32>)>(self.0.clone()))
+            .unwrap()
     }
 }
 
@@ -704,15 +772,15 @@ pub enum Pseudo {
     Hover,
     InRange,
     Invalid,
-    Lang(String),
     LastChild,
     LastOfType,
     Link,
-    Not(String),
-    NthChild(usize),
-    NthLastChild(usize),
-    NthLastOfType(usize),
-    NthOfType(usize),
+    // Lang(String),
+    // Not(String),
+    // NthChild(usize),
+    // NthLastChild(usize),
+    // NthLastOfType(usize),
+    // NthOfType(usize),
     OnlyOfType,
     OnlyChild,
     Optional,
@@ -741,15 +809,15 @@ impl Pseudo {
             Pseudo::Hover => ":hover",
             Pseudo::InRange => ":in-range",
             Pseudo::Invalid => ":invalid",
-            Pseudo::Lang(_xxx) => ":langXXX",
             Pseudo::LastChild => ":last-child",
             Pseudo::LastOfType => ":last-of-type",
             Pseudo::Link => ":link",
-            Pseudo::Not(_xxx) => ":notXXX",
-            Pseudo::NthChild(_xxx) => ":nth-childXXX",
-            Pseudo::NthLastChild(_xxx) => ":nth-last-childXXX",
-            Pseudo::NthLastOfType(_xxx) => ":nth-last-of-typeXXX",
-            Pseudo::NthOfType(_xxx) => ":nth-of-typeXXX",
+            // Pseudo::Lang(_xxx) => ":langXXX",
+            // Pseudo::Not(_xxx) => ":notXXX",
+            // Pseudo::NthChild(_xxx) => ":nth-childXXX",
+            // Pseudo::NthLastChild(_xxx) => ":nth-last-childXXX",
+            // Pseudo::NthLastOfType(_xxx) => ":nth-last-of-typeXXX",
+            // Pseudo::NthOfType(_xxx) => ":nth-of-typeXXX",
             Pseudo::OnlyOfType => ":only-of-type",
             Pseudo::OnlyChild => ":only-child",
             Pseudo::Optional => ":optional",
@@ -1223,7 +1291,8 @@ impl<Ms> LocalUpdateEl<El<Ms>> for Style {
     }
 }
 
-// depreciated for now
+// this function adds blocks of css as rules
+// however it ensures only one classname is needed.
 impl<Ms> LocalUpdateEl<El<Ms>> for &[Style] {
     fn update_el(self, el: &mut El<Ms>) {
         let vec_of_rendered_css = self.iter().map(|s| s.render()).collect::<Vec<String>>();
@@ -1469,7 +1538,7 @@ impl GlobalStyle {
         });
     }
 
-    pub fn activate_scoped_styles(&self) {
+    pub fn activate_styles(&self) {
         let mut style_string = "global".to_string();
 
         for (selector, style) in &self.styles {
@@ -1525,6 +1594,11 @@ impl GlobalStyle {
                     &html_root_class,
                     &selector,
                 );
+                STYLES_USED.with(|css_set_ref| {
+                    css_set_ref
+                        .borrow_mut()
+                        .insert(revised_variant_hash.clone())
+                });
             }
         }
     }

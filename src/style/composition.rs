@@ -6,7 +6,7 @@ use crate::style::s;
 use crate::style::Style;
 use std::collections::HashMap;
 
-pub struct Composition<T, A, Mdl, Ms>
+pub struct Composition<A, Mdl, Ms, T>
 where
     T: BreakpointTheme,
     A: LayoutArea,
@@ -20,7 +20,7 @@ where
     pub layouts_hm: HashMap<T, usize>,
 }
 
-impl<T, A, Mdl, Ms> Default for Composition<T, A, Mdl, Ms>
+impl<A, Mdl, Ms, T> Default for Composition<A, Mdl, Ms, T>
 where
     T: BreakpointTheme,
     A: LayoutArea,
@@ -38,7 +38,56 @@ where
     }
 }
 
-impl<T, A, Mdl, Ms> Composition<T, A, Mdl, Ms>
+// Named Breakpoints Keys allow you to refer to a named breakpoint in layout helpers and css media queries.
+#[derive(Hash, PartialEq, Eq, Clone, Debug)]
+pub enum SeedBreakpoint {
+    ExtraSmall,
+    Small,
+    Medium,
+    Large,
+    ExtraLarge,
+}
+impl BreakpointTheme for SeedBreakpoint {} // Enable `Breakpoint` as a Breakpoint alias.
+
+pub fn default_bp_theme() -> Theme {
+    use SeedBreakpoint::*;
+
+    // I generally set the named aliases seperately from the theme scales:
+    Theme::new("default_bp_theme")
+        .set_breakpoint(ExtraSmall, (0, Some(600))) // Breakpoints are upper bound exclusive lower bound inclusive.
+        .set_breakpoint(Small, (600, Some(960)))
+        .set_breakpoint(Medium, (960, Some(1280)))
+        .set_breakpoint(Large, (1280, Some(1920)))
+        .set_breakpoint(ExtraLarge, (1920, None))
+}
+
+pub trait WithLayoutComposition<A, Mdl, Ms>
+where
+    // T: BreakpointTheme + 'static,
+    Ms: 'static,
+    Mdl: 'static,
+    A: LayoutArea,
+{
+    fn with_layout(layout: Layout<A>) -> Composition<A, Mdl, Ms, SeedBreakpoint>;
+}
+
+impl<A, Mdl, Ms> WithLayoutComposition<A, Mdl, Ms> for Composition<A, Mdl, Ms, SeedBreakpoint>
+where
+    // T: BreakpointTheme + 'static,
+    Ms: 'static,
+    Mdl: 'static,
+    A: LayoutArea,
+{
+    fn with_layout(layout: Layout<A>) -> Composition<A, Mdl, Ms, SeedBreakpoint> {
+        let mut c = Composition::default();
+        c.layouts.push(layout);
+        let idx = c.layouts.len() - 1;
+        c.layouts_hm.insert(SeedBreakpoint::ExtraSmall, idx);
+        c
+    }
+}
+
+impl<A, Mdl, Ms, T> Composition<A, Mdl, Ms, T>
 where
     T: BreakpointTheme + 'static,
     Ms: 'static,
@@ -53,14 +102,6 @@ where
             let idx = c.layouts.len() - 1;
             c.layouts_hm.insert(bp.clone(), idx);
         }
-        c
-    }
-
-    pub fn with_layout(bp: T, layout: Layout<A>) -> Self {
-        let mut c = Composition::default();
-        c.layouts.push(layout);
-        let idx = c.layouts.len() - 1;
-        c.layouts_hm.insert(bp.clone(), idx);
         c
     }
 
@@ -91,57 +132,48 @@ where
     }
 
     pub fn render(&self, model: &Mdl) -> Node<Ms> {
-        // sorted breakpoints
+        use_themes(
+            || vec![default_bp_theme()],
+            || {
+                let mut sorted_bps = self.layouts_hm.keys().cloned().collect::<Vec<T>>();
+                sorted_bps.sort_unstable_by_key(|bp_key| {
+                    let bp_pair = with_themes(ReturnBpTuple(bp_key.clone()));
+                    -(bp_pair.0 as i32)
+                });
 
-        let mut sorted_bps = self.layouts_hm.keys().cloned().collect::<Vec<T>>();
-        sorted_bps.sort_unstable_by_key(|bp_key| {
-            let bp_pair = with_themes(|borrowed_themes| {
-                borrowed_themes
+                // We find the biggest breakpoint that fits...
+
+                // find the first layout which
+                let opt_layout = sorted_bps
                     .iter()
-                    .find_map(|theme| theme.get::<T, (u32, Option<u32>)>(bp_key.clone().clone()))
-                    .unwrap()
-            });
-            -(bp_pair.0 as i32)
-        });
-
-        // We find the biggest breakpoint that fits...
-
-        // find the first layout which
-        let opt_layout = sorted_bps
-            .iter()
-            .map(|bp_key| {
-                (
-                    with_themes(|borrowed_themes| {
-                        borrowed_themes
-                            .iter()
-                            .find_map(|theme| {
-                                theme.get::<T, (u32, Option<u32>)>(bp_key.clone().clone())
-                            })
+                    .map(|bp_key| {
+                        (
+                            with_themes(ReturnBpTuple(bp_key.clone())),
+                            self.layouts_hm.get(bp_key),
+                        )
+                    })
+                    .find(|(bp_pair, _layout)| match bp_pair {
+                        (lower, _) => window()
+                            .match_media(&format!("(min-width: {}px)", lower))
                             .unwrap()
-                    }),
-                    self.layouts_hm.get(bp_key),
-                )
-            })
-            .find(|(bp_pair, _layout)| match bp_pair {
-                (lower, _) => window()
-                    .match_media(&format!("(min-width: {}px)", lower))
-                    .unwrap()
-                    .unwrap()
-                    .matches(),
-            });
+                            .unwrap()
+                            .matches(),
+                    });
 
-        if let Some((_bp_pair, Some(idx))) = opt_layout {
-            self.render_layout(*idx, model)
-        } else {
-            if let Some(idx) = self.default_idx {
-                self.render_layout(idx, model)
-            } else {
-                let smallest_bp_key = sorted_bps.last().unwrap();
-                let idx_of_smallest_layout = self.layouts_hm.get(smallest_bp_key).unwrap();
+                if let Some((_bp_pair, Some(idx))) = opt_layout {
+                    self.render_layout(*idx, model)
+                } else {
+                    if let Some(idx) = self.default_idx {
+                        self.render_layout(idx, model)
+                    } else {
+                        let smallest_bp_key = sorted_bps.last().unwrap();
+                        let idx_of_smallest_layout = self.layouts_hm.get(smallest_bp_key).unwrap();
 
-                self.render_layout(*idx_of_smallest_layout, model)
-            }
-        }
+                        self.render_layout(*idx_of_smallest_layout, model)
+                    }
+                }
+            },
+        )
     }
 
     pub fn set_content<F: Fn(&Mdl) -> Node<Ms> + 'static>(
@@ -265,13 +297,20 @@ where
             },
             layout.areas.iter().map(|area| {
                 div![
-                    if let Some(styles) = layout.area_styles.get(area) {
-                        styles.clone()
-                    } else {
-                        Style::default()
-                    }
-                    .grid_area(format!("{:?} ", area).replace("::", "__").as_str())
-                    .name(format!("{:?}_wrapper", area).as_str()),
+                    {
+                        let grid_area_style = s()
+                            .grid_area(format!("{:?} ", area).replace("::", "__").as_str())
+                            .name(format!("{:?}_wrapper", area).as_str());
+
+                        let area_style = if let Some(styles) = layout.area_styles.get(area) {
+                            let mut styles = styles.clone();
+                            styles.push(grid_area_style);
+                            styles
+                        } else {
+                            vec![grid_area_style]
+                        };
+                        area_style
+                    },
                     if let Some(view) = self.areas_hm.get(area) {
                         view(model)
                     } else {

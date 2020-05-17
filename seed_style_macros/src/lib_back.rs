@@ -630,260 +630,260 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
 
                     let theme_scale_ident = format_ident!("{}", theme_scale.value());
                     let theme_scale_string = theme_scale.value();
-                    let struct_type = format_ident!(
-                        "ReturnSpecific{}From{}",
-                        specific_type_names.value(),
-                        theme_ids.value()
-                    );
                     let expanded = quote! {
 
+                        // impl<T> From<T> for Style
+                        // where
+                        //     T: StyleTheme + 'static,
+                        // {
+                        //     fn from(v: T) -> Self {
+                        //         with_themes(ReturnStyle(v));
+                        //     }
+                        // }
+
+                        // struct ReturnThemeVal<T: #themeid_ident + 'static,#specific_ident>(T);
+
+                        // impl<T> ActOnIteratorOfThemes<Option<#specific_ident>> for ReturnThemeVal<T,#specific_ident>
+                        // where
+                        //     T: #themeid_ident + 'static,
+                        // {
+                        //     fn call<'a, It>(&self, it: It) -> Option<#specific_ident>
+                        //     where
+                        //         It: Iterator<Item = &'a Theme>,
+                        //     {
+                        //         it.find_map(|theme| theme.get::<T, #generic_ident>(self.0.clone()))
+                        //     }
+                        // }
+
+                        // struct ReturnThemeValFromUsize<#specific_ident>(usize);
 
 
-                        struct #struct_type<T: #themeid_ident + 'static>(T);
+                        // impl<T> ActOnIteratorOfThemes<Option<#specific_ident>> for ReturnThemeValFromUsize<#specific_ident>
 
-                        impl<T> ActOnIteratorOfThemes<Option<#specific_ident>> for #struct_type<T>
-                        where
-                            T: #themeid_ident + 'static,
-                        {
-                            fn call<'a, It>(&self, mut it:  It) -> Option<#specific_ident>
-                            where
-                                It: Iterator<Item = &'a Theme>,
-                            {
-                                it.find_map(|theme| theme.get::<T, #generic_ident>(self.0.clone())).map(|v| v.into())
-                            }
-                        }
+                        // {
+                        //     fn call<'a, It>(&self, it: It) -> Option<#specific_ident>
+                        //     where
+                        //         It: Iterator<Item = &'a Theme>,
+                        //     {
+                        //         it.find_map( |theme| theme.#theme_scale_ident.get(self) )
+                        //     }
+                        // }
 
+                        //     impl <T> From<T> for #specific_ident where T:#themeid_ident + 'static{
+                        //         fn from(v: T) -> Self {
+                        //             with_themes( ReturnThemeVal(v)).unwrap().into()
+                        //         }
+                        //     }
 
-                        impl ActOnIteratorOfThemes<Option<#specific_ident>> for ReturnThemeValFromUsize<#specific_ident>
-
-                        {
-                            fn call<'a, It>(&self, mut it:  It) -> Option<#specific_ident>
-                            where
-                                It: Iterator<Item = &'a Theme>,
-                            {
-                                it.find_map( |theme| theme.#theme_scale_ident.get(self.0.clone())).cloned().map(|v| v.into())
-                            }
-                        }
-
-                            impl <T> From<T> for #specific_ident where T:#themeid_ident + 'static{
-                                fn from(v: T) -> Self {
-                                    with_themes( #struct_type(v)).unwrap()
-                                }
-                            }
-
-                            impl <T>From<(T,#generic_ident)> for #specific_ident where T: #themeid_ident + 'static {
-                                fn from(v:(T,#generic_ident)) -> Self {
+                        //     impl <T>From<(T,#generic_ident)> for #specific_ident where T: #themeid_ident + 'static {
+                        //         fn from(v:(T,#generic_ident)) -> Self {
 
 
-                                    if let Some(theme_value) =  with_themes( #struct_type(v.0)){
-                                        theme_value.clone()
-                                    } else {
-                                        v.1.clone().into()
-                                    }
+                        //             if let Some(theme_value) =   with_themes( ReturnThemeVal(v)){
+                        //                 theme_value.clone().into()
+                        //             } else {
+                        //                 v.1.clone().into()
+                        //             }
 
-                                }
-                            }
+                        //         }
+                        //     }
 
-                            impl<Th> UpdateStyle<#specific_ident> for Th
-                                where Th: #themeid_ident + 'static {
-                                fn update_style(self, style: &mut Style) {
-                                    let val : #specific_ident = self.into();
+                        //     impl<Th> UpdateStyle<#specific_ident> for Th
+                        //         where Th: #themeid_ident + 'static {
+                        //         fn update_style(self, style: &mut Style) {
+                        //             let val : #specific_ident = self.into();
 
-                                    style.add_rule(Box::new(val));
+                        //             style.add_rule(Box::new(val));
 
-                                }
-                            }
+                        //         }
+                        //     }
 
-                            impl <Th>UpdateStyle<#specific_ident> for (Th, #generic_ident)
-                                    where Th: #themeid_ident + 'static {
-                                    fn update_style(self, style: &mut Style) {
-                                        let val : #specific_ident = self.into();
+                        //     impl <Th>UpdateStyle<#specific_ident> for (Th, #generic_ident)
+                        //             where Th: #themeid_ident + 'static {
+                        //             fn update_style(self, style: &mut Style) {
+                        //                 let val : #specific_ident = self.into();
 
-                                        style.add_rule(Box::new(val));
+                        //                 style.add_rule(Box::new(val));
 
-                                    }
-                                }
+                        //             }
+                        //         }
 
-                            impl UpdateStyle<#specific_ident> for usize {
-                                fn update_style(self, style: &mut Style){
+                        //     impl UpdateStyle<#specific_ident> for usize {
+                        //         fn update_style(self, style: &mut Style){
 
-                                    let theme_value : #specific_ident =
-                                        if let Some(theme_value) =   with_themes( ReturnThemeValFromUsize(self, PhantomData::<#specific_ident>)){
-                                            theme_value.clone()
+                        //             let theme_value : #specific_ident =
+                        //                 if let Some(theme_value) =   with_themes( ReturnThemeVaFromUsize(self)){
+                        //                     theme_value.clone().into()
 
-                                        } else {
-                                            panic!("Theme scale does not exist {}", #theme_scale_string )
+                        //                 } else {
 
-                                        };
-                                    style.add_rule(Box::new(theme_value));
-                                }
-                        }
+                        //                     panic!("Theme scale does not exist {}", #theme_scale_string )
 
-                        impl UpdateStyle<#specific_ident> for &[usize; 1]
-                        where
-                        #specific_ident: 'static + Clone + CssValueTrait,
-                         {
-                            fn update_style(self, style: &mut Style) {
-                                let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self, style);
-                            }
-                        }
+                        //                 };
+                        //             style.add_rule(Box::new(theme_value));
+                        //         }
+                        // }
 
-                        impl UpdateStyle<#specific_ident> for &[usize; 2]
-                        where
-                        #specific_ident: 'static + Clone + CssValueTrait,
-                         {
-                            fn update_style(self, style: &mut Style) {
-                                let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
-                            }
-                        }
+                        // impl UpdateStyle<#specific_ident> for &[usize; 1]
+                        // where
+                        // #specific_ident: 'static + Clone + CssValueTrait,
+                        //  {
+                        //     fn update_style(self, style: &mut Style) {
+                        //         let ref_self : &[usize] = self.as_ref();
+                        //         <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self, style);
+                        //     }
+                        // }
 
-                        impl UpdateStyle<#specific_ident> for &[usize; 3]
-                        where
-                        #specific_ident: 'static + Clone + CssValueTrait,
-                         {
-                            fn update_style(self, style: &mut Style) {
-                                let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
-                            }
-                        }
+                        // impl UpdateStyle<#specific_ident> for &[usize; 2]
+                        // where
+                        // #specific_ident: 'static + Clone + CssValueTrait,
+                        //  {
+                        //     fn update_style(self, style: &mut Style) {
+                        //         let ref_self : &[usize] = self.as_ref();
+                        //         <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
+                        //     }
+                        // }
 
-
-                        impl UpdateStyle<#specific_ident> for &[usize; 4]
-                        where
-                        #specific_ident: 'static + Clone + CssValueTrait,
-                         {
-                            fn update_style(self, style: &mut Style) {
-                                let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
-                            }
-                        }
-
-                        impl UpdateStyle<#specific_ident> for &[usize; 5]
-                        where
-                        #specific_ident: 'static + Clone + CssValueTrait,
-                         {
-                            fn update_style(self, style: &mut Style) {
-                                let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
-                            }
-                        }
-
-                        impl UpdateStyle<#specific_ident> for &[usize; 6]
-                        where
-                        #specific_ident: 'static + Clone + CssValueTrait,
-                         {
-                            fn update_style(self, style: &mut Style) {
-                                let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
-                            }
-                        }
-
-                        impl UpdateStyle<#specific_ident> for &[usize; 7]
-                        where
-                        #specific_ident: 'static + Clone + CssValueTrait,
-                         {
-                            fn update_style(self, style: &mut Style) {
-                                let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
-                            }
-                        }
+                        // impl UpdateStyle<#specific_ident> for &[usize; 3]
+                        // where
+                        // #specific_ident: 'static + Clone + CssValueTrait,
+                        //  {
+                        //     fn update_style(self, style: &mut Style) {
+                        //         let ref_self : &[usize] = self.as_ref();
+                        //         <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
+                        //     }
+                        // }
 
 
-                        impl UpdateStyle<#specific_ident> for &[usize; 8]
-                        where
-                        #specific_ident: 'static + Clone + CssValueTrait,
-                         {
-                            fn update_style(self, style: &mut Style) {
-                                let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
-                            }
-                        }
+                        // impl UpdateStyle<#specific_ident> for &[usize; 4]
+                        // where
+                        // #specific_ident: 'static + Clone + CssValueTrait,
+                        //  {
+                        //     fn update_style(self, style: &mut Style) {
+                        //         let ref_self : &[usize] = self.as_ref();
+                        //         <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
+                        //     }
+                        // }
 
-                        impl UpdateStyle<#specific_ident> for &[usize; 9]
-                        where
-                        #specific_ident: 'static + Clone + CssValueTrait,
-                         {
-                            fn update_style(self, style: &mut Style) {
-                                let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
-                            }
-                        }
+                        // impl UpdateStyle<#specific_ident> for &[usize; 5]
+                        // where
+                        // #specific_ident: 'static + Clone + CssValueTrait,
+                        //  {
+                        //     fn update_style(self, style: &mut Style) {
+                        //         let ref_self : &[usize] = self.as_ref();
+                        //         <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
+                        //     }
+                        // }
 
-                        impl UpdateStyle<#specific_ident> for &[usize; 10]
-                        where
-                        #specific_ident: 'static + Clone + CssValueTrait,
-                         {
-                            fn update_style(self, style: &mut Style) {
-                                let ref_self : &[usize] = self.as_ref();
-                                <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
-                            }
-                        }
+                        // impl UpdateStyle<#specific_ident> for &[usize; 6]
+                        // where
+                        // #specific_ident: 'static + Clone + CssValueTrait,
+                        //  {
+                        //     fn update_style(self, style: &mut Style) {
+                        //         let ref_self : &[usize] = self.as_ref();
+                        //         <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
+                        //     }
+                        // }
 
-
-
-                        impl UpdateStyle<#specific_ident> for &[usize] where
-                        #specific_ident: 'static + Clone + CssValueTrait,{
-                            fn update_style(self, style: &mut Style){
-
-
-
-
-                                    if let Some(bp_scale) = with_themes(ReturnBpScale) {
-
-
-                                        let mut old_style = None;
-
-                                        for (style_idx, bp) in bp_scale.iter().enumerate(){
-                                            if let Some(theme_idx) = self.get(style_idx){
-                                            if let Some(generic_value )= with_themes(ReturnThemeValFromUsize(*theme_idx, PhantomData::<#specific_ident>)) {
-
-                                                    let specific_value : #specific_ident = generic_value.into();
-
-                                                    let rules = style
-                                                                    .media_rules
-                                                                    .entry(bp.clone().0)
-                                                                    .or_insert(vec![]);
-                                                    rules.push(Rule {
-                                                        value: Box::new(specific_value.clone()),
-                                                    });
-
-                                                    old_style = Some(specific_value);
-                                                }else {
-                                                    panic!("No theme scale for that index!")
-                                                }
-
-                                            } else {
-                                                    let rules = style
-                                                        .media_rules
-                                                        .entry(bp.clone().0)
-                                                        .or_insert(vec![]);
-                                                        rules.push(Rule {
-                                                            value: Box::new(old_style.clone().unwrap()),
-                                                        });
-
-                                                }
+                        // impl UpdateStyle<#specific_ident> for &[usize; 7]
+                        // where
+                        // #specific_ident: 'static + Clone + CssValueTrait,
+                        //  {
+                        //     fn update_style(self, style: &mut Style) {
+                        //         let ref_self : &[usize] = self.as_ref();
+                        //         <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
+                        //     }
+                        // }
 
 
-                                        }
-                                    } else {
-                                        panic!("No breakpoints have been defined!")
+                        // impl UpdateStyle<#specific_ident> for &[usize; 8]
+                        // where
+                        // #specific_ident: 'static + Clone + CssValueTrait,
+                        //  {
+                        //     fn update_style(self, style: &mut Style) {
+                        //         let ref_self : &[usize] = self.as_ref();
+                        //         <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
+                        //     }
+                        // }
 
-                                    }
-                            }
-                        }
+                        // impl UpdateStyle<#specific_ident> for &[usize; 9]
+                        // where
+                        // #specific_ident: 'static + Clone + CssValueTrait,
+                        //  {
+                        //     fn update_style(self, style: &mut Style) {
+                        //         let ref_self : &[usize] = self.as_ref();
+                        //         <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
+                        //     }
+                        // }
+
+                        // impl UpdateStyle<#specific_ident> for &[usize; 10]
+                        // where
+                        // #specific_ident: 'static + Clone + CssValueTrait,
+                        //  {
+                        //     fn update_style(self, style: &mut Style) {
+                        //         let ref_self : &[usize] = self.as_ref();
+                        //         <&[usize] as UpdateStyle<#specific_ident>>::update_style(ref_self,style);
+                        //     }
+                        // }
+
+                        // impl UpdateStyle<#specific_ident> for &[usize] where
+                        // #specific_ident: 'static + Clone + CssValueTrait,{
+                        //     fn update_style(self, style: &mut Style){
+
+                        //             if let Some(bp_scale) = with_themes(ReturnBpScale) {
+
+                        //                 let mut old_style = None;
+
+                        //                 for (style_idx, bp) in bp_scale.iter().enumerate(){
+                        //                     if let Some(theme_idx) = self.get(style_idx){
+                        //                     if let Some(generic_value )= with_themes(ReturnThemeValFromUsize(theme_idx)) {{
+
+                        //                             let specific_value : #specific_ident = generic_value.into();
+
+                        //                             let rules = style
+                        //                                             .media_rules
+                        //                                             .entry(bp.clone().0)
+                        //                                             .or_insert(vec![]);
+                        //                             rules.push(Rule {
+                        //                                 value: Box::new(specific_value.clone()),
+                        //                             });
+
+                        //                             old_style = Some(specific_value);
+                        //                         }else {
+                        //                             panic!("No theme scale for that index!")
+                        //                         }
+
+                        //                     } else {
+                        //                             let rules = style
+                        //                                 .media_rules
+                        //                                 .entry(bp.clone().0)
+                        //                                 .or_insert(vec![]);
+                        //                                 rules.push(Rule {
+                        //                                     value: Box::new(old_style.clone().unwrap()),
+                        //                                 });
+
+                        //                         }
+                        //                     }
+
+                        //                 }
+                        //             } else {
+                        //                 panic!("No breakpoints have been defined!")
+
+                        //             }
+
+                        //     }
+                        // }
 
                     };
 
                     let ident_from_generic = if generic_ident != specific_ident {
                         quote!(
-                            impl UpdateStyle<#specific_ident> for #generic_ident {
-                            fn update_style(self, style: &mut Style) {
-                                let val : #specific_ident = self.into();
-                                style.add_rule(Box::new(val));
-                            }
-                        }
+                        //     impl UpdateStyle<#specific_ident> for #generic_ident {
+                        //     fn update_style(self, style: &mut Style) {
+                        //         let val : #specific_ident = self.into();
+                        //         style.add_rule(Box::new(val));
+                        //     }
+                        // }
                         )
                     } else {
                         quote!()

@@ -11,7 +11,7 @@ where
     pub areas: Vec<A>,
     pub layout: Vec<Vec<A>>,
     pub container_styles: Option<Style>,
-    pub area_styles: HashMap<A, Style>,
+    pub area_styles: HashMap<A, Vec<Style>>,
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
@@ -28,7 +28,8 @@ where
     }
 
     pub fn area_style(mut self, area: A, style: Style) -> Self {
-        self.area_styles.insert(area, style);
+        let area_styles = self.area_styles.entry(area).or_insert(vec![]);
+        area_styles.push(style);
         self
     }
 
@@ -55,19 +56,24 @@ where
             area_styles: HashMap::new(),
         }
     }
+}
 
-    pub fn grid() -> Layout<NoArea> {
+
+pub trait WithGridLayout
+{
+    fn grid(style: Style) -> Layout<NoArea>;
+}
+
+impl WithGridLayout for Layout<NoArea>
+{
+    fn grid(style: Style) -> Layout<NoArea> {
         Layout::<NoArea> {
             areas: vec![],
             layout: vec![],
             container_styles: None,
             area_styles: HashMap::new(),
-        }
+        }.style(style)
     }
-}
-
-pub fn layout_grid(style: Style) -> Layout<NoArea> {
-    Layout::<NoArea>::grid().style(style)
 }
 
 pub trait LayoutArea: Hash + PartialEq + Eq + std::fmt::Debug + Clone + 'static {

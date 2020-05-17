@@ -254,6 +254,38 @@ impl From<ExactLength> for CssPaddingBottom {
     }
 }
 
+impl From<ExactLength> for CssTop {
+    fn from(v: ExactLength) -> Self {
+        Self::Length(v)
+    }
+}
+
+
+impl From<ExactLength> for CssColumnWidth {
+    fn from(v: ExactLength) -> Self {
+        Self::Length(v)
+    }
+}
+
+
+impl From<ExactLength> for CssBottom {
+    fn from(v: ExactLength) -> Self {
+        Self::Length(v)
+    }
+}
+
+impl From<ExactLength> for CssLeft {
+    fn from(v: ExactLength) -> Self {
+        Self::Length(v)
+    }
+}
+
+impl From<ExactLength> for CssRight {
+    fn from(v: ExactLength) -> Self {
+        Self::Length(v)
+    }
+}
+
 impl From<ExactLength> for CssPaddingTop {
     fn from(v: ExactLength) -> Self {
         Self::Length(v)
@@ -264,8 +296,6 @@ impl From<Percent> for CssBorderRadius {
         Self::Percentage(v)
     }
 }
-
-
 
 impl From<Percent> for CssSpace {
     fn from(v: Percent) -> Self {

@@ -18,6 +18,66 @@ pub enum CssBackgroundAttachment {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "column-span: {};")]
+pub enum CssColumnSpan {
+    #[display(fmt = "none")]
+    None,
+    #[display(fmt = "all")]
+    All,
+    #[display(fmt = "initial")]
+    Initial,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
+
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "column-fill: {};")]
+pub enum CssColumnsFill {
+    #[display(fmt = "auto")]
+    Auto,
+    #[display(fmt = "balance")]
+    Balance,
+    #[display(fmt = "initial")]
+    Initial,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
+
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "column-rule: {};")]
+pub enum CssColumnRule {
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
+
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "column-count: {};")]
+pub enum CssColumnCount {
+    #[display(fmt = "auto")]
+    Auto,
+    Number(u32),
+    #[display(fmt = "initial")]
+    Initial,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
+
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[display(fmt = "column-width: {};")]
+pub enum CssColumnWidth {
+    Length(ExactLength),
+    #[display(fmt = "auto")]
+    Auto,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
+
+#[derive(Display, Clone, Debug, CssStyleMacro)]
 pub enum CssRaw {
     StringValue(String),
 }
@@ -1511,6 +1571,8 @@ pub enum CssMinHeight {
 pub enum CssMaxHeight {
     #[display(fmt = "auto")]
     Auto,
+    #[display(fmt = "none")]
+    None,
     Length(ExactLength),
     Percentage(Percent),
     #[display(fmt = "initial")]
@@ -1945,7 +2007,7 @@ pub enum CssOutlineBottomColor {
     Inherit,
 }
 
-#[derive(Display, Clone, Debug)]
+#[derive(Display, Clone, Debug, CssStyleMacro)]
 #[display(fmt = "shadow: {};")]
 pub enum CssShadow {
     #[display(fmt = "{},{},{},{}", _0, _1, _2, _3)]
@@ -2417,14 +2479,9 @@ create_enums!([
     "BreakInside",
     "CaretColor",
     "ClipPath",
-    "ColumnCount",
-    "ColumnFill",
-    "ColumnRule",
     "ColumnRuleColor",
     "ColumnRuleStyle",
     "ColumnRuleWidth",
-    "ColumnSpan",
-    "ColumnWidth",
     "Columns",
     "CounterReset",
     "Filter",

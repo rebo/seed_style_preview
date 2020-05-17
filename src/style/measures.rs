@@ -14,6 +14,7 @@ pub enum Unit {
     Em,
     Cm,
     Vw,
+    Vh,
 }
 
 pub fn px<T: Into<f64>>(val: T) -> ExactLength {
@@ -27,6 +28,13 @@ pub fn vw<T: Into<f64>>(val: T) -> ExactLength {
     ExactLength {
         value: NotNan::new(val.into()).unwrap(),
         unit: Unit::Vw,
+    }
+}
+
+pub fn vh<T: Into<f64>>(val: T) -> ExactLength {
+    ExactLength {
+        value: NotNan::new(val.into()).unwrap(),
+        unit: Unit::Vh,
     }
 }
 
@@ -58,11 +66,19 @@ pub fn hsl<T: Into<f64>>(h: T, s: T, l: T) -> CssColor {
     CssColor::Hsl(h, s, l)
 }
 
-pub fn rgb(r: f64, g: f64, b: f64) -> CssColor {
+pub fn rgb<T: Into<f64>>(r: T, g: T, b: T) -> CssColor {
+    let r = r.into();
+    let g = g.into();
+    let b = b.into();
+
     CssColor::Rgba(r, g, b, 1.0)
 }
 
-pub fn rgba(r: f64, g: f64, b: f64, a: f64) -> CssColor {
+pub fn rgba<T: Into<f64>>(r: T, g: T, b: T, a: T) -> CssColor {
+    let r = r.into();
+    let g = g.into();
+    let b = b.into();
+    let a = a.into();
     CssColor::Rgba(r, g, b, a)
 }
 
@@ -74,6 +90,7 @@ impl std::fmt::Display for ExactLength {
             Unit::Em => write!(f, "{}em", self.value),
             Unit::Cm => write!(f, "{}cm", self.value),
             Unit::Vw => write!(f, "{}vw", self.value),
+            Unit::Vh => write!(f, "{}vh", self.value),
         }
     }
 }
