@@ -1042,8 +1042,8 @@ fn is_option_type(fnarg : &FnArg) -> bool {
                     syn::Type::Path(syn::TypePath { path, .. }) => {
                         let segment = path.segments.last().expect("segment to exist");
                         // panic!("{:#?}", segment);
-                        if segment.ident.to_string() != "Node" && segment.ident.to_string() != "Option" {
-                            panic!("Node type is not Node or Option")
+                        if segment.ident.to_string() != "Node" && segment.ident.to_string() != "Option"  && segment.ident.to_string() != "Vec"     {
+                            panic!("Node type is not Node, Vec<Node> or Option")
                         }
 
                         if segment.ident.to_string() == "Option" {
@@ -1065,8 +1065,8 @@ fn is_option_type(fnarg : &FnArg) -> bool {
                             }
                             true
                         } else {
-                            if segment.ident.to_string() != "Node" {
-                                panic!("argument type is not Node")
+                            if segment.ident.to_string() != "Node" &&  segment.ident.to_string() != "Vec"{
+                                panic!("argument type is not Node or Vec")
                             }
                             false
                         }
@@ -1078,6 +1078,51 @@ fn is_option_type(fnarg : &FnArg) -> bool {
                     
                     
                     }, //syn::parse_quote!(&#ident),
+                    _ => unimplemented!("Only supported on simplest argument expressions"),
+                }
+            }
+    }
+    }
+    
+     
+fn is_vec_type(fnarg : &FnArg) -> bool {
+    match fnarg {
+            FnArg::Receiver(_) => panic!("cannot be a method with self receiver"),
+            FnArg::Typed(t) => {
+                match &*t.ty {
+                    syn::Type::Path(syn::TypePath { path, .. }) => {
+                        let segment = path.segments.last().expect("segment to exist");
+                        // panic!("{:#?}", segment);
+                        if segment.ident.to_string() != "Node" && segment.ident.to_string() != "Vec" {
+                            panic!("Node type is not Node or Vec")
+                        }
+
+                        if segment.ident.to_string() == "Vec" {
+                            match &segment.arguments {
+                                syn::PathArguments::AngleBracketed(generic_args) => {
+                                    match generic_args.args.first().expect("generic args to exist"){
+                                        syn::GenericArgument::Type(syn::Type::Path(type_path)) => {
+                                            if type_path.path.segments.first().expect("Vec to have a type").ident.to_string()!="Node" {
+                                                panic!("Vec does not contain a Node")
+                                            }
+                                        }
+                                        _ => unimplemented!()
+                                    }
+                                    //     syn::Type::Path(path) => {}
+                                    //     _ => unimplemented!(),
+                                    // }
+                                }
+                                _ => unimplemented!()
+                            }
+                            true
+                        } else {
+                            if segment.ident.to_string() != "Node" && segment.ident.to_string() != "Option"{
+                                panic!("argument type is not Node or Option")
+                            }
+                            false
+                        }
+                    
+                    }, 
                     _ => unimplemented!("Only supported on simplest argument expressions"),
                 }
             }
@@ -1122,17 +1167,7 @@ fn is_option_type(fnarg : &FnArg) -> bool {
 pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
     
     let mut input_fn: ItemFn = syn::parse_macro_input!(input);
-    // let attr_args = parse_macro_input!(args as AttributeArgs);
-
-    // let args = match MacroArgs::from_list(&attr_args) {
-    //     Ok(v) => v,
-    //     Err(e) => {
-    //         return TokenStream::from(e.write_errors());
-    //     }
-    // };
-
-    // let msg_type = args.msg_type;
-
+    
     if !input_fn.sig.ident.to_string().ends_with("_view") {
         panic!("Your function name needs to end with _view");
     }
@@ -1143,10 +1178,6 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
 
     let view_ident = format_ident!("{}", view_ident_string);
 
-    
-    
-
-    
     // Names of the root and children view function arguments
     // Initially not underscore prefixed as assumed to be utilized.
 
@@ -1180,7 +1211,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
         
         let argument_name = get_arg_name(root_fn_arg);
         if (argument_name != "root") && (argument_name != "_root") {
-            panic!("the second argument must be root or _root")
+            panic!("the first Node<Ms> argument must be root or _root")
         }
         if argument_name == "_root" {
             root_ident = format_ident!("_root");
@@ -1193,12 +1224,10 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
 
     let view_builder = format_ident!("{}Builder", view_ident_string.to_camel_case());
 
-
-
     if let Some(children_arg) = input_iter.next(){
         let argument_name = get_arg_name(children_arg);
         if (argument_name != "children") && (argument_name != "_children") {
-            panic!("The third argument must be 'children' or '_children'")
+            panic!("The argument after root must be 'children' or '_children'")
         }
 
         assert_children_have_vec_structure(children_arg);
@@ -1210,14 +1239,24 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
     };
 
     let mut vec_of_args = vec![];
+    let mut vec_of_vec_args = vec![];
     let mut vec_of_all_args = vec![];
     let mut vec_of_optional_args = vec![];
+
     for input in &mut input_iter {
-        vec_of_all_args.push( format_ident!("{}",get_arg_name(input)));
-        vec_of_args.push( ( get_arg_name(input) , is_option_type(input) ) );
+        let arg_name = format_ident!("{}",get_arg_name(input));
+
+        vec_of_all_args.push( arg_name.clone() );
+        
+        vec_of_args.push( (arg_name.clone() , is_option_type(input), is_vec_type(input)  ) );
+
         if is_option_type(input) {
-            vec_of_optional_args.push( format_ident!("{}",get_arg_name(input)))
-        } 
+            vec_of_optional_args.push( arg_name.clone() );
+        }
+
+        if is_vec_type(input) {
+            vec_of_vec_args.push( arg_name.clone() );
+        }
     }
 
     
@@ -1230,13 +1269,13 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
         quote! {self.root, children, }
     };
 
-    for (name, optional) in vec_of_args.iter() {
-        let name = format_ident!("{}", name);
+    for (name, optional, is_a_vec) in vec_of_args.iter() {
     
-        let new_line = if *optional {
-            quote! {  #name: Option<Node<#msg_type_ident>>,}
-        } else {
-            quote! {  #name: Node<#msg_type_ident>,}
+        let new_line = match (*optional, *is_a_vec) {
+            (true, false) => quote! {  #name: Option<Node<#msg_type_ident>>,},
+            (false, false) => quote! {  #name: Node<#msg_type_ident>,},
+            (false, true) => quote! {  #name: Vec<Node<#msg_type_ident>>,},
+            (true, true) => panic!("You should never have an optional vec arg"),
         };
 
         view_builder_inner_quote = quote! {
@@ -1244,22 +1283,26 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
             #new_line
         };
 
-        let new_line = if *optional {
-            quote! {  #name: None,}
-        } else {
-            quote! {  #name: empty![],}
+        let new_line = match (*optional, *is_a_vec) {
+            (true, false) =>   quote! {  #name: None,},
+            (false, false) =>  quote! {  #name: empty![],},
+            (false, true) =>  quote! {  #name: vec![],},
+            (true, true) => panic!("You should never have an optional vec arg"),
         };
+
 
         view_builder_empty_impl_inner_quote = quote! {
             #view_builder_empty_impl_inner_quote
             #new_line
         };
 
-        let new_line = if *optional {
-            quote! {  self.#name,}
-        } else {
-            quote! {  self.#name, }
-        };
+        // let new_line = if *optional {
+        //     quote! {  self.#name,}
+        // } else {
+        //     quote! {  self.#name, }
+        // };
+
+        let new_line = quote!{ self.#name, };
 
         view_function_call_impl_inner_quote = quote! {
             #view_function_call_impl_inner_quote
@@ -1290,6 +1333,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
         let children = vec![];
      )   
     };
+
     let mut args_quote = quote!();
     let mut args_impl_quote = quote!();
 
@@ -1333,7 +1377,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
    
     let mut args_macro_quote = quote! {};
 
-    for (name, _optional) in vec_of_args.iter() {
+    for (name, _optional , _is_a_vec) in vec_of_args.iter() {
         let name = format_ident!("{}_{}", view_ident, name);
         
         let macro_item_impl_quote = quote! {
@@ -1372,7 +1416,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
                     #[allow(unused_mut)]
                     let mut builder = #view_builder::<_>::default_empty();
                         
-                    process_part!([#main_view_macro_name_view_ident, [#(#vec_of_all_args),*], [#(#vec_of_optional_args),*] , [$($part)*]]) ;
+                    process_part!([#main_view_macro_name_view_ident, [#(#vec_of_all_args),*], [#(#vec_of_optional_args),*] , [#(#vec_of_vec_args),*] , [$($part)*]]) ;
                             
                     builder.render()
                 }
@@ -1441,6 +1485,7 @@ struct ProcessPartMacro {
     main_name_ident: syn::Ident,
     ident: syn::Ident,
     optional: bool,
+    is_a_vec: bool,
     tokens: TokenStream,
 }
 
@@ -1464,7 +1509,8 @@ impl Parse for ProcessPartArray {
         // all_args and optional_args are needed when processing a macro expression.
         let all_args = iter_for_args.next().cloned().expect("This ExprArray should exist");
         let optional_args = iter_for_args.next().cloned().expect("This ExprArray should exist");
-        
+        let vec_args = iter_for_args.next().cloned().expect("This ExprArray should exist");
+
         let expr = iter_for_args.next().cloned().expect("expression to exist");
         
 
@@ -1551,12 +1597,31 @@ impl Parse for ProcessPartArray {
                             false
                         };
 
+                        let is_a_vec = if match &vec_args {
+                            Expr::Array(expr_array) => {
+                                expr_array.elems.iter().any(|item| 
+
+                                    if let Expr::Path(path) = item {
+                                        path.path.get_ident().unwrap().to_string() == ident.to_string() 
+                                    } else {
+                                        unimplemented!()
+                                    }
+                                )
+                            }
+                            _ => unimplemented!()
+                        } {
+                            true
+                        } else {
+                            false
+                        };
+
 
                     if is_an_argument_macro {
                         vec_of_processed_parts.push(ProcessPart::Macro(ProcessPartMacro {
                             main_name_ident: main_macro_name_ident.clone(),
                             ident: ident,
                             optional,
+                            is_a_vec,
                             tokens: tokens.into(),
                         }))
                         // let global_macro_ident = format_ident!("{}_{}",global_view_name , macro_ident);
@@ -1604,17 +1669,13 @@ pub fn process_part(input: TokenStream) -> TokenStream {
         let global_macro_ident = format_ident!("{}_{}", m.main_name_ident, m.ident);
         let tokens: proc_macro2::TokenStream = m.tokens.into();
         
-        let exp = if m.optional{
-            quote!(
-                builder.#macro_name = Some(#global_macro_ident![#tokens]);
-            )
-        } else {
-            quote!(
-                builder.#macro_name = #global_macro_ident![#tokens];
-            )
+        let exp = match (m.optional, m.is_a_vec){
+            (true, false) =>  quote!(   builder.#macro_name = Some(#global_macro_ident![#tokens]); ),
+            (false, false) =>   quote!(     builder.#macro_name = #global_macro_ident![#tokens]; ),
+            (false, true) => quote!(   builder.#macro_name.push(#global_macro_ident![#tokens]); ),
+            (true, true) => panic!("You should never have an optional vec arg"),
         };
-
-        
+           
 
         combined_quote = quote!(
             #combined_quote
@@ -1683,8 +1744,6 @@ impl Parse for AsElem {
             }
         }
 
-
-        // let count = input.parse::<syn::LitInt>()?;
         Ok(
             AsElem {
                 elem_name_ident,
@@ -1700,27 +1759,6 @@ impl Parse for AsElem {
 #[proc_macro]
 pub fn as_tag(input: TokenStream) -> TokenStream {
     let as_tag = parse_macro_input!(input as AsElem);
-
-//     let mut input_iter  = input.iter();
-
-//     let elem_name_ident = if let (elem_name_expr) = input_iter.next() {
-//          match elem_name_expr {
-//             Expr::Path(path) => {
-//                 let ident = path.path.get_ident().expect("Input to exist");
-//                 format_ident!("{}",ident.to_string.to_camel_case())
-//             }
-//             _ => {panic!("cannot determine main macro name")}
-//         }
-//     };
-
-//     let affected_node_ident = if let (affected_node_expr) = input_iter.next() {
-//         match affected_node_expr {
-//            Expr::Path(path) => {
-//                path.path.get_ident().expect("Affected_node to exist")
-//            }
-//            _ => {panic!("cannot determine main macro name")}
-//        }
-//    };
 
     let affected_node_ident = as_tag.affected_node_ident;
     let elem_name_ident = format_ident!("{}",as_tag.elem_name_ident.to_string().to_camel_case());
