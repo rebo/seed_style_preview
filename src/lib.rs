@@ -7,8 +7,18 @@ pub use style::CssValueTrait;
 // style builder
 pub use style::s;
 
+pub use seed_style_macros::{view_macro, as_tag, process_part, process_submacro_part};
+
+#[macro_export]
+macro_rules! with_dollar_sign {
+    ($($body:tt)*) => {
+        macro_rules! __with_dollar_sign { $($body)* }
+        __with_dollar_sign!($);
+    }
+}
 // style property argument trait
 pub use style::{
+    PseudoTrait,
     // exports for Seed Layout
     composition::{default_bp_theme, Composition, SeedBreakpoint, WithLayoutComposition},
     // Css Values
@@ -32,6 +42,7 @@ pub use style::{
         ColorTheme, DisplayTheme, FontSizeTheme, FontTheme, LetterSpacingTheme, LineHeightTheme,
         ShadowTheme, SizeTheme, SpaceTheme, StyleTheme, TransitionTheme, ZIndexTheme,
     },
+    AddStyleToNode,
     // global style api
     GlobalStyle,
     // extension trait to allow Style structs to be update_el processed by seed.
@@ -41,6 +52,21 @@ pub use style::{
     // style property argument trait
     UpdateStyle,
 };
+
+// pub trait UpdateView<B,Ms> {
+//     fn update_view(self, builder: &mut B);
+// }
+
+// impl<T,B> UpdateView<B> for T
+// where T:UpdateEl(Ms),
+// {
+//     fn update_view(self, builder: &mut B) {
+//         match builder.root {
+//             Node::Element(ref mut el) => self.update_el(el),
+//             _ => {}
+//         }
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

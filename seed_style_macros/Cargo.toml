@@ -14,14 +14,17 @@ proc-macro = true
 [[test]]
 name = "tests"
 path = "tests/progress.rs"
-
+# seed = "0.7.0"
 [dev-dependencies]
 trybuild = "1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-syn = {version = "1.0.17",  features = ["full","extra-traits"]}
+ syn = {version = "1.0.17",  features = ["full","extra-traits"]}
 quote = "1.0.3"
 proc-macro2 = "1.0.10"
 heck = "0.3.1"
+eager = "0.1.0"
+seed = "0.7.0"
+darling = "0.10.2"

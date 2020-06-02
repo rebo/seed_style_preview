@@ -2,7 +2,7 @@ use derive_more::Display;
 use harsh::{Harsh, HarshBuilder};
 use seed::{prelude::*, *};
 use seed_hooks::*;
-use seed_style_macros::create_pseudos;
+
 use std::cell::{Cell, RefCell};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
@@ -25,6 +25,7 @@ pub mod layout;
 pub mod helpers;
 
 pub mod presets;
+use seed_style_macros::CssPseudoMacro;
 
 use presets::*;
 
@@ -49,7 +50,11 @@ fn short_uniq_id(id: u64) -> String {
 
 use objekt_clonable::*;
 #[clonable]
-pub trait CssValueTrait: std::fmt::Display + Clone + Sync + Send + std::fmt::Debug {}
+pub trait CssValueTrait: std::fmt::Display + Clone + Sync + Send + std::fmt::Debug {
+    fn prefixes(&self) -> Option<Vec<String>> {
+        None
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct Rule {
@@ -58,7 +63,15 @@ pub struct Rule {
 
 impl Rule {
     fn render(&self) -> String {
-        format!("{}\n", self.value)
+        if let Some(prefixes) = &self.value.prefixes() {
+            let mut rendered = format!("{}\n", self.value);
+            for prefix in prefixes {
+                rendered.push_str(&format!("{}{}\n", prefix, self.value));
+            }
+            rendered
+        } else {
+            format!("{}\n", self.value)
+        }
     }
 }
 
@@ -415,34 +428,34 @@ impl Style {
     //     new_style.pseudo = Pseudo::Hover;
     //     new_style
     // }
-    create_pseudos!([
-        "None",
-        "Active",
-        "Checked",
-        "Disabled",
-        "Empty",
-        "Enabled",
-        "FirstChild",
-        "FirstOfType",
-        "Focus",
-        "Hover",
-        "InRange",
-        "Invalid",
-        "LastChild",
-        "LastOfType",
-        "Link",
-        "OnlyOfType",
-        "OnlyChild",
-        "Optional",
-        "OutOfRange",
-        "ReadOnly",
-        "ReadWrite",
-        "Required",
-        "Root",
-        "Target",
-        "Valid",
-        "Visited",
-    ]);
+    // create_pseudos!([
+    //     "None",
+    //     "Active",
+    //     "Checked",
+    //     "Disabled",
+    //     "Empty",
+    //     "Enabled",
+    //     "FirstChild",
+    //     "FirstOfType",
+    //     "Focus",
+    //     "Hover",
+    //     "InRange",
+    //     "Invalid",
+    //     "LastChild",
+    //     "LastOfType",
+    //     "Link",
+    //     "OnlyOfType",
+    //     "OnlyChild",
+    //     "Optional",
+    //     "OutOfRange",
+    //     "ReadOnly",
+    //     "ReadWrite",
+    //     "Required",
+    //     "Root",
+    //     "Target",
+    //     "Valid",
+    //     "Visited",
+    // ]);
 
     #[track_caller]
     pub fn name(mut self, name: &str) -> Style {
@@ -521,6 +534,15 @@ impl Style {
     pub fn style_child(mut self, val: &str) -> Style {
         self.updated_at.push(format!("{}", Location::caller()));
         self.pre_combinators = vec![Combinator::Pre(PreCombinator::IsDirectParentOf(
+            val.to_string(),
+        ))];
+        self
+    }
+
+    #[track_caller]
+    pub fn style_other(mut self, val: &str) -> Style {
+        self.updated_at.push(format!("{}", Location::caller()));
+        self.pre_combinators = vec![Combinator::Pre(PreCombinator::CombinatorForOther(
             val.to_string(),
         ))];
         self
@@ -633,10 +655,10 @@ impl Style {
     pub fn render(&self) -> String {
         let mut style = "".to_string();
 
-        style.push_str(&format!(
-            "    /* Defined at {} */\n",
-            self.updated_at.last().unwrap()
-        ));
+        // style.push_str(&format!(
+        //     "    /* Defined at {} */\n",
+        //     self.updated_at.last().unwrap()
+        // ));
 
         for rule in &self.rules {
             style.push_str(&rule.render());
@@ -756,9 +778,11 @@ pub enum PreCombinator {
     IsDirectParentOf(String),
     #[display(fmt = " {}", _0)]
     IsParentOf(String),
+    #[display(fmt = "{}", _0)]
+    CombinatorForOther(String),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, CssPseudoMacro)]
 pub enum Pseudo {
     None,
     Active,
@@ -775,12 +799,12 @@ pub enum Pseudo {
     LastChild,
     LastOfType,
     Link,
-    // Lang(String),
-    // Not(String),
-    // NthChild(usize),
-    // NthLastChild(usize),
-    // NthLastOfType(usize),
-    // NthOfType(usize),
+    Lang(String),
+    Not(String),
+    NthChild(usize),
+    NthLastChild(usize),
+    NthLastOfType(usize),
+    NthOfType(usize),
     OnlyOfType,
     OnlyChild,
     Optional,
@@ -792,45 +816,48 @@ pub enum Pseudo {
     Target,
     Valid,
     Visited,
+    Before(String),
+    After(String),
 }
 
 impl Pseudo {
     fn render(&self) -> String {
         match self {
-            Pseudo::None => "",
-            Pseudo::Active => ":active",
-            Pseudo::Checked => ":checked",
-            Pseudo::Disabled => ":disabled",
-            Pseudo::Empty => ":empty",
-            Pseudo::Enabled => ":enabled",
-            Pseudo::FirstChild => ":first-child",
-            Pseudo::FirstOfType => ":first-of-type",
-            Pseudo::Focus => ":focus",
-            Pseudo::Hover => ":hover",
-            Pseudo::InRange => ":in-range",
-            Pseudo::Invalid => ":invalid",
-            Pseudo::LastChild => ":last-child",
-            Pseudo::LastOfType => ":last-of-type",
-            Pseudo::Link => ":link",
-            // Pseudo::Lang(_xxx) => ":langXXX",
-            // Pseudo::Not(_xxx) => ":notXXX",
-            // Pseudo::NthChild(_xxx) => ":nth-childXXX",
-            // Pseudo::NthLastChild(_xxx) => ":nth-last-childXXX",
-            // Pseudo::NthLastOfType(_xxx) => ":nth-last-of-typeXXX",
-            // Pseudo::NthOfType(_xxx) => ":nth-of-typeXXX",
-            Pseudo::OnlyOfType => ":only-of-type",
-            Pseudo::OnlyChild => ":only-child",
-            Pseudo::Optional => ":optional",
-            Pseudo::OutOfRange => ":out-of-range",
-            Pseudo::ReadOnly => ":read-only",
-            Pseudo::ReadWrite => ":read-write",
-            Pseudo::Required => ":required",
-            Pseudo::Root => ":root",
-            Pseudo::Target => ":target",
-            Pseudo::Valid => ":valid",
-            Pseudo::Visited => ":visited",
+            Pseudo::None => "".to_string(),
+            Pseudo::Active => ":active".to_string(),
+            Pseudo::Checked => ":checked".to_string(),
+            Pseudo::Disabled => ":disabled".to_string(),
+            Pseudo::Empty => ":empty".to_string(),
+            Pseudo::Enabled => ":enabled".to_string(),
+            Pseudo::FirstChild => ":first-child".to_string(),
+            Pseudo::FirstOfType => ":first-of-type".to_string(),
+            Pseudo::Focus => ":focus".to_string(),
+            Pseudo::Hover => ":hover".to_string(),
+            Pseudo::InRange => ":in-range".to_string(),
+            Pseudo::Invalid => ":invalid".to_string(),
+            Pseudo::LastChild => ":last-child".to_string(),
+            Pseudo::LastOfType => ":last-of-type".to_string(),
+            Pseudo::Link => ":link".to_string(),
+            Pseudo::OnlyOfType => ":only-of-type".to_string(),
+            Pseudo::OnlyChild => ":only-child".to_string(),
+            Pseudo::Optional => ":optional".to_string(),
+            Pseudo::OutOfRange => ":out-of-range".to_string(),
+            Pseudo::ReadOnly => ":read-only".to_string(),
+            Pseudo::ReadWrite => ":read-write".to_string(),
+            Pseudo::Required => ":required".to_string(),
+            Pseudo::Root => ":root".to_string(),
+            Pseudo::Target => ":target".to_string(),
+            Pseudo::Valid => ":valid".to_string(),
+            Pseudo::Visited => ":visited".to_string(),
+            Pseudo::Before(before) => format!(":before({})", before),
+            Pseudo::After(after) => format!(":after({})", after),
+            Pseudo::Lang(val) => format!(":lang({})", val),
+            Pseudo::Not(val) => format!(":not({})", val),
+            Pseudo::NthChild(val) => format!(":nth-child({})", val),
+            Pseudo::NthLastChild(val) => format!(":nth-last-chid({})", val),
+            Pseudo::NthLastOfType(val) => format!(":nth-last-of-type({})", val),
+            Pseudo::NthOfType(val) => format!(":nth-of-type({})", val),
         }
-        .to_string()
     }
 }
 
@@ -1452,6 +1479,7 @@ fn add_css_to_head_unchecked(css: &str, variant_hash: u64, style: &Style, name: 
         };
 
     let rules_length = css_stylesheet.css_rules().unwrap().length();
+    // log!(full_css);
     let _ = css_stylesheet.insert_rule_with_index(&full_css, rules_length);
 
     for (media_breakpoint, rule_vec) in &style.media_rules {
@@ -1499,6 +1527,19 @@ fn add_css_to_head_unchecked(css: &str, variant_hash: u64, style: &Style, name: 
     short_hash
 }
 
+pub trait AddStyleToNode {
+    fn style(&mut self, style: Style);
+}
+
+impl<Ms> AddStyleToNode for Node<Ms> {
+    fn style(&mut self, style: Style) {
+        match self {
+            seed::virtual_dom::Node::Element(ref mut elx) => style.update_el(elx),
+            _ => {}
+        }
+    }
+}
+
 #[derive(Default, Debug)]
 pub struct GlobalStyle {
     pub styles: Vec<(String, Style)>,
@@ -1506,6 +1547,9 @@ pub struct GlobalStyle {
 
 impl GlobalStyle {
     pub fn style(mut self, selector: &str, style: Style) -> GlobalStyle {
+        if selector == "html" {
+            panic!("Sorry for now , You can only set html style directly in css.")
+        }
         self.styles.push((selector.to_string(), style));
         self
     }

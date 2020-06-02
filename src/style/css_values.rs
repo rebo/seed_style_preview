@@ -1,9 +1,9 @@
 use super::measures::*;
 use crate::style::{CssValueTrait, Style, UpdateStyle};
 use derive_more::Display;
+use seed::{prelude::*, *};
 use seed_style_macros::{create_enums, CssStyleMacro};
 use std::panic::Location;
-
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[short_prop = "bg_attachment"]
 #[display(fmt = "background-attachment: {};")]
@@ -1746,7 +1746,7 @@ pub enum CssBorderTopRightRadius {
 }
 
 #[derive(Display, Clone, Debug, CssStyleMacro)]
-#[display(fmt = "border--top-left-radius: {};")]
+#[display(fmt = "border-top-left-radius: {};")]
 pub enum CssBorderTopLeftRadius {
     Length(ExactLength),
     Percentage(Percent),
@@ -2379,6 +2379,23 @@ pub enum CssBoxSizing {
     StringValue(String),
 }
 
+// vendor specific not ideal hack but works for now.
+// need to implement display directly
+#[derive(Display, Clone, Debug, CssStyleMacro)]
+#[vendor_prefixes = "-webkit-"]
+#[display(fmt = "backface-visibility: {};")]
+pub enum CssBackfaceVisibility {
+    #[display(fmt = "hidden")]
+    Hidden,
+    #[display(fmt = "visible")]
+    Visible,
+    #[display(fmt = "initial")]
+    Initial,
+    #[display(fmt = "inherit")]
+    Inherit,
+    StringValue(String),
+}
+
 #[derive(Display, Clone, Debug, CssStyleMacro)]
 #[display(fmt = "-webkit-font-smoothing: {};")]
 pub enum CssWebkitFontSmoothing {
@@ -2461,7 +2478,6 @@ create_enums!([
     "AnimationPlayState",
     "AnimationTimingFunction",
     "Animation",
-    "BackfaceVisibility",
     "Background",
     "BackgroundBlendMode",
     "BackgroundClip",

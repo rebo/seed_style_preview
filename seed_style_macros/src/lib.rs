@@ -1,10 +1,14 @@
+extern crate darling;
 extern crate proc_macro;
 use self::proc_macro::TokenStream;
+use heck::CamelCase;
 use heck::KebabCase;
 use heck::SnakeCase;
+
 use quote::{format_ident, quote};
 use syn::parse::{Parse, ParseStream, Result};
 use syn::{parse_macro_input, DeriveInput, Expr, ExprArray};
+use syn::{FnArg, ItemFn, Pat};
 use syn::{Lit, Meta, MetaNameValue};
 
 // Derive Proc Macro to generate extension traits for Style
@@ -22,15 +26,16 @@ use syn::{Lit, Meta, MetaNameValue};
 /// then `padding_auto()` will be generated on Style.
 //  if short_prop attribute is set, then that will be set too
 //  i.e. `p_auto()`
-#[proc_macro_derive(CssStyleMacro, attributes(short_prop))]
+#[proc_macro_derive(CssStyleMacro, attributes(short_prop, vendor_prefixes))]
 pub fn expand(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let mut short_prop: Option<String> = None;
+    let mut vendor_prefixes: Option<String> = None;
 
     // Iterate over the struct's #[...] attributes
     for option in input.attrs.into_iter() {
-        let option = option.parse_meta().unwrap();
+        let option = option.parse_meta().expect("option to exist");
         match option {
             // Match '#[ident = lit]' attributes. Match guard makes it '#[short_prop = lit]'
             Meta::NameValue(MetaNameValue {
@@ -38,6 +43,13 @@ pub fn expand(input: TokenStream) -> TokenStream {
             }) if path.is_ident("short_prop") => {
                 if let Lit::Str(lit) = lit {
                     short_prop = Some(lit.value());
+                }
+            }
+            Meta::NameValue(MetaNameValue {
+                ref path, ref lit, ..
+            }) if path.is_ident("vendor_prefixes") => {
+                if let Lit::Str(lit) = lit {
+                    vendor_prefixes = Some(lit.value());
                 }
             }
             _ => {}
@@ -75,6 +87,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
 
                 self.updated_at.push(format!("{}", Location::caller()));
                 val.update_style(&mut self);
+
                 self
 
              }
@@ -110,48 +123,26 @@ pub fn expand(input: TokenStream) -> TokenStream {
         )
     };
 
-    // let inner_quote = quote! {
-    //     fn update_style(self, style: &Style)-> Style {
-    //         with_themes( |borrowed_themes| {
-    //             let new_style = style.clone();
-    //             for (i, style_val) in &mut self.iter().cloned().map(|v| v.into()).enumerate() {
-    //                 if let Some(breakpoint) = borrowed_themes.iter().find_map( |theme| theme.media_bp_scale.get(i) ){
-    //                     new_style.updated_at.push(format!("{}", Location::caller()));
-    //                     let rules = new_style.media_rules.entry(breakpoint.0.clone()).or_insert(vec![]);
-    //                     rules.push(Rule{value:Box::new(style_val.clone())})
-    //                 }
-    //             }
-    //             new_style
-    //         })
-    //     }
-    // };
+    let mut outer_vendor_prefixes_quote = quote! {};
+
+    if let Some(vendor_prefixes) = &vendor_prefixes {
+        let prefixes = vendor_prefixes.split(",").map(|p| p.to_string());
+
+        let inner_vendor_prefixes_quote = quote! {
+            Some(vec![#(#prefixes.to_string()),*])
+
+        };
+
+        outer_vendor_prefixes_quote = quote! {
+              fn prefixes(&self) -> Option<Vec<String>>{
+                  #inner_vendor_prefixes_quote
+            }
+
+        };
+    }
 
     let update_style_quote = quote! {
-        impl CssValueTrait for #css_type_name{}
-
-    // impl UpdateStyle<#css_type_name> for #css_type_name {
-    //     fn update_style(self, style: &mut Style)-> Style{
-    //         let val : #css_type_name = self.into();
-
-
-
-    //         let new_style =  style.clone();
-    //         new_style.updated_at.push(format!("{}", Location::caller()));
-    //         new_style.add_rule(Box::new(val));
-    //         new_style
-    //     }
-    // }
-
-    // impl UpdateStyle<#css_type_name> for &str {
-    //     fn update_style(self, style: &mut Style)-> Style{
-    //         let new_style =  style.clone();
-    //         let val : #css_type_name = self.into();
-    //         new_style.updated_at.push(format!("{}", Location::caller()));
-    //         new_style.add_rule(Box::new(val));
-    //         new_style
-    //     }
-    // }
-
+        impl CssValueTrait for #css_type_name{#outer_vendor_prefixes_quote}
 
 
     impl From<&str> for #css_type_name where {
@@ -160,64 +151,6 @@ pub fn expand(input: TokenStream) -> TokenStream {
         }
     }
 
-    // impl <R>UpdateStyle<#css_type_name> for &Vec<R> where R:Into<#css_type_name> + Clone{#inner_quote }
-    // impl <R>UpdateStyle<#css_type_name> for &[R] where R:Into<#css_type_name> + Clone{#inner_quote }
-    // impl <R>UpdateStyle<#css_type_name> for &[R;1] where R:Into<#css_type_name> + Clone{
-    //     fn update_style(self, style: &Style)-> Style {
-    //         self.as_ref().update_style(style)
-    //     }
-    // }
-
-    // impl <R>UpdateStyle<#css_type_name> for &[R;2] where R:Into<#css_type_name> + Clone{
-    //     fn update_style(self, style: &Style)-> Style {
-    //         self.as_ref().update_style(style)
-    //     }
-    // }
-    // impl <R>UpdateStyle<#css_type_name> for &[R;3] where R:Into<#css_type_name> + Clone{
-    //     fn update_style(self, style: &Style)-> Style {
-    //         self.as_ref().update_style(style)
-    //     }
-    // }
-    // impl <R>UpdateStyle<#css_type_name> for &[R;4] where R:Into<#css_type_name> + Clone{
-    //     fn update_style(self, style: &Style)-> Style {
-    //         self.as_ref().update_style(style)
-    //     }
-    // }
-
-    // impl <R>UpdateStyle<#css_type_name> for &[R;5] where R:Into<#css_type_name> + Clone{
-    //     fn update_style(self, style: &Style)-> Style {
-    //         self.as_ref().update_style(style)
-    //     }
-    // }
-
-    // impl <R>UpdateStyle<#css_type_name> for &[R;6] where R:Into<#css_type_name> + Clone{
-    //     fn update_style(self, style: &Style)-> Style {
-    //         self.as_ref().update_style(style)
-    //     }
-    // }
-
-    // impl <R>UpdateStyle<#css_type_name> for &[R;7] where R:Into<#css_type_name> + Clone{
-    //     fn update_style(self, style: &Style)-> Style {
-    //         self.as_ref().update_style(style)
-    //     }
-    // }
-    // impl <R>UpdateStyle<#css_type_name> for &[R;8] where R:Into<#css_type_name> + Clone{
-    //     fn update_style(self, style: &Style)-> Style {
-    //         self.as_ref().update_style(style)
-    //     }
-    // }
-
-    // impl <R>UpdateStyle<#css_type_name> for &[R;9] where R:Into<#css_type_name> + Clone{
-    //     fn update_style(self, style: &Style)-> Style {
-    //         self.as_ref().update_style(style)
-    //     }
-    // }
-
-    // impl <R>UpdateStyle<#css_type_name> for &[R;10] where R:Into<#css_type_name> + Clone{
-    //     fn update_style(self, style: &Style)-> Style {
-    //         self.as_ref().update_style(style)
-    //     }
-    // }
     };
 
     let mut create_extension_trait = false;
@@ -295,6 +228,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
 
                 let f_small_name = format_ident!("{}_{}", snake_case_type, snake_case_variant);
                 let f_small_name_ident = format_ident!("{}", f_small_name);
+
                 if let Some(short_prop) = short_prop.clone() {
                     let short_prop_ident = format_ident!("{}_{}", short_prop, snake_case_variant);
                     quote! {
@@ -304,6 +238,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
 
                             self.updated_at.push(format!("{}", Location::caller()));
                             self.add_rule(Box::new(#css_type_name :: #f_big_name));
+                            // #vendor_prefixes_quote
                             self
                         }
                         #[track_caller]
@@ -312,6 +247,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
 
                             self.updated_at.push(format!("{}", Location::caller()));
                             self.add_rule(Box::new(#css_type_name :: #f_big_name));
+
                             self
                         }
                     }
@@ -322,6 +258,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
 
                             self.updated_at.push(format!("{}", Location::caller()));
                             self.add_rule(Box::new(#css_type_name :: #f_big_name));
+
                             self
                         }
 
@@ -377,69 +314,140 @@ pub fn expand(input: TokenStream) -> TokenStream {
     }
 }
 
-// // Prop Macro to generate all short property methods on Style.
-// // Will eventually be moved to the derive macro above.
-// struct GenerateShortFNames {
-//     properties: ExprArray,
-// }
+#[proc_macro_derive(CssPseudoMacro)]
+pub fn expand_pseudo(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
 
-// impl Parse for GenerateShortFNames {
-//     fn parse(input: ParseStream) -> Result<Self> {
-//         let properties: ExprArray = input.parse()?;
+    if let syn::Data::Enum(data_enum) = input.data {
+        let func_impls_defn = data_enum
+            .variants
+            .iter()
+            .filter(|v| v.fields == syn::Fields::Unit)
+            .map(|v| {
+                let snake_case_variant =
+                    format_ident!("{}", v.ident.clone().to_string().to_snake_case());
+                quote! {
+                    fn #snake_case_variant(self) -> Style;
+                }
+            });
 
-//         Ok(GenerateShortFNames { properties })
-//     }
-// }
+        let trait_definition = quote! {
+            pub trait PseudoTrait {
+                #(
+                #func_impls_defn
+                )*
 
-// #[proc_macro]
-// pub fn generate_short_f_names(input: TokenStream) -> TokenStream {
-//     let GenerateShortFNames { properties } = parse_macro_input!(input as GenerateShortFNames);
+                fn before(self, before: &str)  -> Style;
+                fn after(self, after: &str)  -> Style;
+                fn lang( self, val: &str)  -> Style ;
 
-//     let mut exp = quote! {};
-//     for property in properties.elems.iter() {
-//         if let Expr::Tuple(ref tuple) = property {
-//             let mut iter = tuple.elems.iter();
-//             let theme_id = iter.next().unwrap().clone();
-//             let generic_type_name = iter.next().unwrap().clone();
+                fn not( self, val: &str)  -> Style ;
 
-//             if let (Expr::Lit(ref theme_id), Expr::Lit(ref generic_type_name)) =
-//                 (theme_id, generic_type_name)
-//             {
-//                 if let (syn::Lit::Str(ref short_name), syn::Lit::Str(ref long_name)) =
-//                     (theme_id.lit.clone(), generic_type_name.lit.clone())
-//                 {
-//                     let short_name_ident = format_ident!("{}", short_name.value());
-//                     let long_name_ident = format_ident!("Css{}", long_name.value());
+                fn nth_child( self, val: usize)  -> Style ;
 
-//                     let variant_name = format_ident!("{}", long_name.value());
 
-//                     let expanded = quote! {
+                fn nth_last_child( self, val: usize)  -> Style ;
 
-//                        #[track_caller]
-//                        pub fn #short_name_ident<T>(&self, val:T) -> Style  where T: UpdateStyle<#long_name_ident> {
-//                            val.update_style(self)
-//                        }
+                fn nth_last_of_type( self, val: usize)  -> Style ;
 
-//                     };
 
-//                     // println!("{}",expanded);
-//                     exp = quote! {
-//                         #exp
-//                         #expanded
-//                     };
+                fn nth_of_type( self, val: usize)  -> Style ;
+            }
+        };
 
-//                     // println!("{}",TokenStream::from(exp));
-//                 }
-//             }
-//         }
-//     }
+        let func_impls = data_enum
+            .variants
+            .iter()
+            .filter(|v| v.fields == syn::Fields::Unit)
+            .map(|v| {
+                let snake_case_variant =
+                    format_ident!("{}", v.ident.clone().to_string().to_snake_case());
+                let big_name = v.ident.clone();
+                quote! {
+                        #[track_caller]
+                        fn #snake_case_variant(mut self) -> Style {
 
-//     // let elem_ident = Ident::from(elem);
+                            self.updated_at.push(format!("{}", Location::caller()));
+                            self.pseudo = Pseudo::#big_name ;
 
-//     // let exp = quote!{};
+                            self
+                        }
 
-//     exp.into()
-// }
+
+                }
+            });
+
+        let trait_impl = quote! {
+
+            impl PseudoTrait for Style {
+                #(#func_impls)*
+
+                fn before(mut self, before: &str)  -> Style {
+                    self.updated_at.push(format!("{}", Location::caller()));
+                    self.pseudo = Pseudo::Before(before.to_string());
+
+                    self
+                }
+
+                fn after(mut self, after: &str)  -> Style {
+                    self.updated_at.push(format!("{}", Location::caller()));
+                    self.pseudo = Pseudo::After(after.to_string());
+
+                    self
+                }
+                fn lang(mut self, val: &str)  -> Style {
+                    self.updated_at.push(format!("{}", Location::caller()));
+                    self.pseudo = Pseudo::Lang(val.to_string());
+
+                    self
+                }
+                fn not(mut self, val: &str)  -> Style {
+                    self.updated_at.push(format!("{}", Location::caller()));
+                    self.pseudo = Pseudo::Not(val.to_string());
+
+                    self
+                }
+                fn nth_child(mut self, val: usize)  -> Style {
+                    self.updated_at.push(format!("{}", Location::caller()));
+                    self.pseudo = Pseudo::NthChild(val);
+
+                    self
+                }
+
+                fn nth_last_child(mut self, val: usize)  -> Style {
+                    self.updated_at.push(format!("{}", Location::caller()));
+                    self.pseudo = Pseudo::NthLastChild(val);
+
+                    self
+                }
+
+                fn nth_last_of_type(mut self, val: usize)  -> Style {
+                    self.updated_at.push(format!("{}", Location::caller()));
+                    self.pseudo = Pseudo::NthLastOfType(val);
+
+                    self
+                }
+
+                fn nth_of_type(mut self, val: usize)  -> Style {
+                    self.updated_at.push(format!("{}", Location::caller()));
+                    self.pseudo = Pseudo::NthOfType(val);
+
+                    self
+                }
+            }
+        };
+
+        let exp = quote! {
+            #trait_definition
+            #trait_impl
+        };
+
+        exp.into()
+    } else {
+        let exp = quote! {};
+        exp.into()
+    }
+}
 
 // impl From<&str> for #type_name where {
 //         fn from(v: &str) -> Self {
@@ -503,58 +511,56 @@ pub fn generate_from_strs(input: TokenStream) -> TokenStream {
 
 // psuedo selectors:
 //
-// Proc macro to generate psuedo methods for Style
-struct CreatePseudos {
-    properties: ExprArray,
-}
+// // Proc macro to generate psuedo methods for Style
+// struct CreatePseudos {
+//     properties: ExprArray,
+// }
 
-impl Parse for CreatePseudos {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let properties: ExprArray = input.parse()?;
+// impl Parse for CreatePseudos {
+//     fn parse(input: ParseStream) -> Result<Self> {
+//         let properties: ExprArray = input.parse()?;
 
-        Ok(CreatePseudos { properties })
-    }
-}
+//         Ok(CreatePseudos { properties })
+//     }
+// }
 
-#[proc_macro]
-pub fn create_pseudos(input: TokenStream) -> TokenStream {
-    let CreatePseudos { properties } = parse_macro_input!(input as CreatePseudos);
+// #[proc_macro]
+// pub fn create_pseudos(input: TokenStream) -> TokenStream {
+//     let CreatePseudos { properties } = parse_macro_input!(input as CreatePseudos);
 
-    let mut exp = quote! {};
-    for property in properties.elems.iter() {
-        if let Expr::Lit(ref property) = property {
-            if let syn::Lit::Str(ref property) = property.lit {
-                let pseudoname = format_ident!("{}", property.value());
+//     let mut exp = quote! {};
+//     for property in properties.elems.iter() {
+//         if let Expr::Lit(ref property) = property {
+//             if let syn::Lit::Str(ref property) = property.lit {
+//                 let pseudoname = format_ident!("{}", property.value());
 
-                let fname = format_ident!("{}", property.value().to_snake_case());
+//                 let fname = format_ident!("{}", property.value().to_snake_case());
 
-                let expanded = quote! {
+//                 let expanded = quote! {
 
+//                 #[track_caller]
+//                 pub fn #fname(mut self) -> Style {
 
+//                     self.updated_at.push(format!("{}", Location::caller()));
+//                     self.pseudo = Pseudo::#pseudoname;
+//                     self
+//                 }
 
-                #[track_caller]
-                pub fn #fname(mut self) -> Style {
+//                 };
+//                 // println!("{}",expanded);
+//                 exp = quote! {
+//                     #exp
+//                     #expanded
+//                 };
+//             }
+//         }
 
-                    self.updated_at.push(format!("{}", Location::caller()));
-                    self.pseudo = Pseudo::#pseudoname;
-                    self
-                }
+//         // let elem_ident = Ident::from(elem);
+//     }
 
-                };
-                // println!("{}",expanded);
-                exp = quote! {
-                    #exp
-                    #expanded
-                };
-            }
-        }
-
-        // let elem_ident = Ident::from(elem);
-    }
-
-    // let exp = quote!{};
-    TokenStream::from(exp)
-}
+//     // let exp = quote!{};
+//     TokenStream::from(exp)
+// }
 
 //
 // impl <T> From<T> for CssWidth where T:SizeTheme + 'static{
@@ -949,4 +955,894 @@ pub fn create_enums(input: TokenStream) -> TokenStream {
     }
 
     TokenStream::from(exp)
+}
+// use darling::FromMeta;
+// use syn::AttributeArgs;
+
+// #[derive(Debug, FromMeta)]
+// struct MacroArgs {
+//     msg_type: syn::Ident,
+// }
+
+fn get_arg_name(fnarg : &FnArg) -> String {
+match fnarg {
+        FnArg::Receiver(_) => panic!("cannot be a method with self receiver"),
+        FnArg::Typed(t) => {
+            match &*t.pat {
+                Pat::Ident(syn::PatIdent { ident, .. }) => ident.to_string(), //syn::parse_quote!(&#ident),
+                _ => unimplemented!("Only supported on simplest argument expressions"),
+            }
+        }
+}
+}
+
+
+fn get_single_type_name(fnarg : &FnArg) -> String {
+    match fnarg {
+            FnArg::Receiver(_) => panic!("cannot be a method with self receiver"),
+            FnArg::Typed(t) => {
+                // panic!("{:#?}", t);
+                match &*t.ty {
+                    syn::Type::Path(syn::TypePath { path, .. }) => {
+                        // panic!("{:#?}", path);
+                        let path = path.get_ident().expect("Are you sure you have passed in an argument struct");
+                        path.to_string()
+                    }, //syn::parse_quote!(&#ident),
+                    _ => unimplemented!("Only supported on simplest argument expressions"),
+                }
+            }
+    }
+    }
+
+
+fn get_node_msg_type_name(fnarg : &FnArg) -> String {
+    match fnarg {
+            FnArg::Receiver(_) => panic!("cannot be a method with self receiver"),
+            FnArg::Typed(t) => {
+                // panic!("{:#?}", t);
+                match &*t.ty {
+                    syn::Type::Path(syn::TypePath { path, .. }) => {
+                        let segment = path.segments.last().expect("segment to exist");
+                        match &segment.arguments {
+                            syn::PathArguments::AngleBracketed(generic_args) => {
+                                match generic_args.args.first().expect("generic args to exist"){
+                                    syn::GenericArgument::Type(syn::Type::Path(type_path)) => {
+                                        let ident = type_path.path.get_ident().expect("generic argument ident to exist");
+                                        ident.to_string()
+                                    }
+                                    _ => unimplemented!()
+                                }
+                                //     syn::Type::Path(path) => {}
+                                //     _ => unimplemented!(),
+                                // }
+                            }
+                            _ => unimplemented!()
+                        }
+
+                        
+                        // let path = path.get_ident().unwrap();
+                        
+                        // path.to_string();
+                    
+                    
+                    }, //syn::parse_quote!(&#ident),
+                    _ => unimplemented!("Only supported on simplest argument expressions"),
+                }
+            }
+    }
+    }
+
+ 
+fn is_option_type(fnarg : &FnArg) -> bool {
+    match fnarg {
+            FnArg::Receiver(_) => panic!("cannot be a method with self receiver"),
+            FnArg::Typed(t) => {
+                // panic!("{:#?}", t);
+                match &*t.ty {
+                    syn::Type::Path(syn::TypePath { path, .. }) => {
+                        let segment = path.segments.last().expect("segment to exist");
+                        // panic!("{:#?}", segment);
+                        if segment.ident.to_string() != "Node" && segment.ident.to_string() != "Option" {
+                            panic!("Node type is not Node or Option")
+                        }
+
+                        if segment.ident.to_string() == "Option" {
+                            match &segment.arguments {
+                                syn::PathArguments::AngleBracketed(generic_args) => {
+                                    match generic_args.args.first().expect("generic args to exist"){
+                                        syn::GenericArgument::Type(syn::Type::Path(type_path)) => {
+                                            if type_path.path.segments.first().expect("option to have a type").ident.to_string()!="Node" {
+                                                panic!("Option does not contain a Node")
+                                            }
+                                        }
+                                        _ => unimplemented!()
+                                    }
+                                    //     syn::Type::Path(path) => {}
+                                    //     _ => unimplemented!(),
+                                    // }
+                                }
+                                _ => unimplemented!()
+                            }
+                            true
+                        } else {
+                            if segment.ident.to_string() != "Node" {
+                                panic!("argument type is not Node")
+                            }
+                            false
+                        }
+
+            
+                        // let path = path.get_ident().unwrap();
+                        
+                        // path.to_string();
+                    
+                    
+                    }, //syn::parse_quote!(&#ident),
+                    _ => unimplemented!("Only supported on simplest argument expressions"),
+                }
+            }
+    }
+    }
+    
+    
+    fn assert_children_have_vec_structure(fnarg : &FnArg) {
+        match fnarg {
+                FnArg::Receiver(_) => panic!("cannot be a method with self receiver"),
+                FnArg::Typed(t) => {
+                    // panic!("{:#?}", t);
+                    match &*t.ty {
+                        syn::Type::Path(syn::TypePath { path, .. }) => {
+                            let segment = path.segments.last().expect("segment to exist");
+                            // panic!("{:#?}", segment);
+                            if segment.ident.to_string() != "Vec" {
+                                panic!("Children need to have Vec<Node<_>> type!")
+                            } else {
+                                match &segment.arguments {
+                                    syn::PathArguments::AngleBracketed(generic_args) => {
+                                        match generic_args.args.first().expect("generic args to exist"){
+                                            syn::GenericArgument::Type(syn::Type::Path(type_path)) => {
+                                                if type_path.path.segments.first().expect("vec to have a type").ident.to_string()!="Node" {
+                                                    panic!("Vec does not contain a Node")
+                                                }
+                                            }
+                                            _ => unimplemented!()
+                                        }
+                                    }
+                                    _ => unimplemented!()
+                                }
+                            }
+                        
+                        }, 
+                        _ => unimplemented!("Only supported on simplest argument expressions"),
+                    }
+                }
+        }
+        }   
+#[proc_macro_attribute]
+pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
+    
+    let mut input_fn: ItemFn = syn::parse_macro_input!(input);
+    // let attr_args = parse_macro_input!(args as AttributeArgs);
+
+    // let args = match MacroArgs::from_list(&attr_args) {
+    //     Ok(v) => v,
+    //     Err(e) => {
+    //         return TokenStream::from(e.write_errors());
+    //     }
+    // };
+
+    // let msg_type = args.msg_type;
+
+    if !input_fn.sig.ident.to_string().ends_with("_view") {
+        panic!("Your function name needs to end with _view");
+    }
+    let input_fn_ident = input_fn.sig.ident.clone();
+
+    let input_fn_string = input_fn.sig.ident.to_string();
+    let view_ident_string = input_fn_string.trim_end_matches("_view");
+
+    let view_ident = format_ident!("{}", view_ident_string);
+
+    
+    
+
+    
+    // Names of the root and children view function arguments
+    // Initially not underscore prefixed as assumed to be utilized.
+
+    let mut root_ident = format_ident!("root");
+    // let mut children_ident = format_ident!("children");
+    let mut children_used = true;
+
+    // Allow us to iter over the view arguments in turn.
+    let has_args = if let Some(first_arg) = &input_fn.sig.inputs.first(){
+        if get_arg_name(first_arg) == "root" || get_arg_name(first_arg) == "_root"  {
+            false
+        } else {
+            true
+        }
+    } else {
+        panic!("There does not appear to be a first argument")
+    };
+
+    let mut input_iter = &mut input_fn.sig.inputs.iter();
+
+    let mut view_args_ident = None;
+    if has_args {
+        if let Some(view_args_fn_arg) = input_iter.next(){
+            view_args_ident = Some(format_ident!("{}",get_single_type_name(view_args_fn_arg)))
+        } else {
+            panic!("Cannot determine the type for view arguments. If your view does not have any arguments pass the () type.")
+        };
+    }
+
+    let msg_type_ident = if let Some(root_fn_arg) = input_iter.next(){
+        
+        let argument_name = get_arg_name(root_fn_arg);
+        if (argument_name != "root") && (argument_name != "_root") {
+            panic!("the second argument must be root or _root")
+        }
+        if argument_name == "_root" {
+            root_ident = format_ident!("_root");
+        }
+        format_ident!("{}",get_node_msg_type_name(root_fn_arg))
+
+    } else {
+        panic!("Cannot determine the Msg type for this seed view, are you sure you are returning Node<MsgType>>")
+    };
+
+    let view_builder = format_ident!("{}Builder", view_ident_string.to_camel_case());
+
+
+
+    if let Some(children_arg) = input_iter.next(){
+        let argument_name = get_arg_name(children_arg);
+        if (argument_name != "children") && (argument_name != "_children") {
+            panic!("The third argument must be 'children' or '_children'")
+        }
+
+        assert_children_have_vec_structure(children_arg);
+
+        if argument_name == "_children" {
+            children_used = false;
+        }
+
+    };
+
+    let mut vec_of_args = vec![];
+    let mut vec_of_all_args = vec![];
+    let mut vec_of_optional_args = vec![];
+    for input in &mut input_iter {
+        vec_of_all_args.push( format_ident!("{}",get_arg_name(input)));
+        vec_of_args.push( ( get_arg_name(input) , is_option_type(input) ) );
+        if is_option_type(input) {
+            vec_of_optional_args.push( format_ident!("{}",get_arg_name(input)))
+        } 
+    }
+
+    
+
+    let mut view_builder_inner_quote = quote! { root: Node<#msg_type_ident>,};
+    let mut view_builder_empty_impl_inner_quote = quote! {root: div![],};
+    let mut view_function_call_impl_inner_quote = if has_args {
+        quote! {self.args, self.root, children, }
+    } else {
+        quote! {self.root, children, }
+    };
+
+    for (name, optional) in vec_of_args.iter() {
+        let name = format_ident!("{}", name);
+    
+        let new_line = if *optional {
+            quote! {  #name: Option<Node<#msg_type_ident>>,}
+        } else {
+            quote! {  #name: Node<#msg_type_ident>,}
+        };
+
+        view_builder_inner_quote = quote! {
+            #view_builder_inner_quote
+            #new_line
+        };
+
+        let new_line = if *optional {
+            quote! {  #name: None,}
+        } else {
+            quote! {  #name: empty![],}
+        };
+
+        view_builder_empty_impl_inner_quote = quote! {
+            #view_builder_empty_impl_inner_quote
+            #new_line
+        };
+
+        let new_line = if *optional {
+            quote! {  self.#name,}
+        } else {
+            quote! {  self.#name, }
+        };
+
+        view_function_call_impl_inner_quote = quote! {
+            #view_function_call_impl_inner_quote
+            #new_line
+        };
+    }
+
+    let view_render_impl_quote = if children_used {
+        quote!(
+            let children = 
+            match &mut self.root {
+                seed::virtual_dom::node::Node::Element(ref mut el) => {
+                    std::mem::replace(&mut el.children, vec![])
+                }
+                seed::virtual_dom::node::Node::Text(ref mut text) => {
+                    let cow  = std::borrow::Cow::<'static, str>::default();
+                    let node_cow = std::mem::replace(&mut text.text, cow);
+
+                    vec![span![node_cow.to_string()]]
+                }
+                seed::virtual_dom::node::Node::Empty => {
+                    vec![]
+                }
+            };
+        )
+    } else {
+     quote!(
+        let children = vec![];
+     )   
+    };
+    let mut args_quote = quote!();
+    let mut args_impl_quote = quote!();
+
+    if has_args {
+        let view_args_ident = view_args_ident.clone().unwrap();
+        args_quote = quote!(args: #view_args_ident,);
+        args_impl_quote = quote!(args: #view_args_ident::default(),);
+    }
+   
+    let view_builder_quote = quote! {
+        struct #view_builder<#msg_type_ident> where #msg_type_ident : 'static {
+            #args_quote
+            #view_builder_inner_quote
+        }
+
+        impl <#msg_type_ident> #view_builder<#msg_type_ident>   where #msg_type_ident : 'static {
+            fn default_empty() -> #view_builder::<#msg_type_ident>{
+                #view_builder::<#msg_type_ident> {
+                    #args_impl_quote
+                    #view_builder_empty_impl_inner_quote
+                }
+            }
+
+            fn render(mut self) -> Node<#msg_type_ident> { 
+                
+                #view_render_impl_quote
+        
+                #input_fn_ident(
+                    #view_function_call_impl_inner_quote
+                )
+            }
+
+            fn update_el(self, elc: &mut El<#msg_type_ident>) {
+                self.render().update_el(elc);
+            }
+        }
+    };
+
+  
+    let view_trait_impls_quote = quote! {};
+   
+    let mut args_macro_quote = quote! {};
+
+    for (name, _optional) in vec_of_args.iter() {
+        let name = format_ident!("{}_{}", view_ident, name);
+        
+        let macro_item_impl_quote = quote! {
+            #[allow(unused_macros)]
+        
+           macro_rules! #name {
+                ( $($ part:tt)* ) => {
+                   {
+                       #[allow(unused_mut)]
+                       let mut eld = El::empty(seed::virtual_dom::Tag::Div);
+                       process_submacro_part!([$($part)*]); 
+                       Node::Element(eld)
+                   }
+               };
+           }
+        };
+
+        args_macro_quote = quote! {
+           #args_macro_quote
+           #macro_item_impl_quote
+        };
+    }
+
+
+    let main_view_macro_name_view_ident = format_ident!("MainViewMacroName_{}", view_ident);
+    let macro_impl_quote = quote! {
+
+
+    #args_macro_quote
+
+    #[macro_export]
+    #[allow(unused_macros)]
+    macro_rules! #view_ident {
+        ( $($ part:tt)* ) => {
+                {
+                    #[allow(unused_mut)]
+                    let mut builder = #view_builder::<_>::default_empty();
+                        
+                    process_part!([#main_view_macro_name_view_ident, [#(#vec_of_all_args),*], [#(#vec_of_optional_args),*] , [$($part)*]]) ;
+                            
+                    builder.render()
+                }
+            };
+    }
+    };
+
+    let inner_block = input_fn.block;
+    input_fn.block = syn::parse_quote! {{
+
+    #[allow(unused_macros)]
+    macro_rules! root {
+        ( $($ part:expr),* $(,)? ) => {
+
+                {
+                    let mut root = #root_ident;
+                    $ (
+                        let  val = $ part;
+                        match root {
+                            seed::virtual_dom::Node::Element(ref mut elx) => {
+                                val.update_el(elx)
+                        },
+                        _ => {}
+                    }
+                    )*
+
+            root
+        }
+        };
+    }
+
+
+
+        #inner_block
+    }
+    };
+
+    quote::quote!(
+        #view_builder_quote
+        #view_trait_impls_quote
+        #macro_impl_quote
+        #[allow(dead_code)]
+        #input_fn
+    )
+    .into()
+}
+
+
+struct ProcessPartArray{
+    parts: Vec<ProcessPart>,
+}
+
+
+enum ProcessPart {
+    Macro(ProcessPartMacro),
+    Assign(ProcessPartAssign),
+    Neither(ProcessPartNeither),
+}
+
+struct ProcessPartAssign {
+    left_ident: syn::Ident,
+    right: Box<Expr>,
+}
+
+struct ProcessPartMacro {
+    main_name_ident: syn::Ident,
+    ident: syn::Ident,
+    optional: bool,
+    tokens: TokenStream,
+}
+
+struct ProcessPartNeither {
+    expr: Expr,
+}
+
+impl Parse for ProcessPartArray {
+    fn parse(input: ParseStream) -> Result<Self> {
+        // an array is passed to the process_part macro.
+        let args :ExprArray = input.parse()?;
+
+        // we need to iterate over it,  the first element is the main macro name
+        // the next element is a list of all arguments
+        // the next element is a list of optional arguments
+        // the final element is the actual expression being processed.
+        let mut iter_for_args = args.elems.iter();
+        
+        let macro_name_expr = iter_for_args.next().cloned().expect("macro_name_expr to exist");
+        
+        // all_args and optional_args are needed when processing a macro expression.
+        let all_args = iter_for_args.next().cloned().expect("This ExprArray should exist");
+        let optional_args = iter_for_args.next().cloned().expect("This ExprArray should exist");
+        
+        let expr = iter_for_args.next().cloned().expect("expression to exist");
+        
+
+        let main_macro_name_ident = match macro_name_expr {
+            Expr::Path(path) => {
+                        
+                let ident =  path.path.get_ident().expect("MainViewMacroName to exist");
+                    let ident_string = ident.to_string();
+                    if ident_string.starts_with("MainViewMacroName_"){
+                        format_ident!("{}",ident_string.trim_start_matches("MainViewMacroName_").to_string())
+                } else {
+                    panic!("Cannot determine main macro name")
+                }
+            }
+            _ => {panic!("cannot determine main macro name")}
+        };
+
+        // The main expression can be an assign, a macro, or something else
+        // if its an assign macro we construct a struct that enables optional arguments to be set
+        // if its a macro we construct a struct that enables the correct macro to be called
+        // if its something else we allow update the root element.
+
+        if let  Expr::Array(expr_array) = expr {
+            let mut vec_of_processed_parts  = vec![];
+
+        
+        for expr in expr_array.elems {
+        match expr {  
+            
+                    Expr::Assign(expr_assign) => {
+                        let left_ident = if let Expr::Path(path) = *expr_assign.left {
+                            let path = path.path;
+                            path.clone().get_ident().clone().expect("left ident to exist").clone()
+                        } else {
+                            unimplemented!()
+                        };
+
+                        vec_of_processed_parts.push(ProcessPart::Assign(ProcessPartAssign {
+                            left_ident: left_ident.clone(),
+                            right: expr_assign.right,
+                        }))
+                    }
+                    Expr::Macro(expr_macro) => {
+                        let path = expr_macro.mac.path.clone();
+
+                        let ident = path.clone().get_ident().clone().expect("expr_macro inside Expr::Macro to exist").clone();
+                        let tokens = expr_macro.mac.tokens.clone();
+
+                        // if ident is not included in all_args then it is not an argument
+
+                        let is_an_argument_macro  = if match &all_args {
+                            Expr::Array(expr_array) => {
+                                expr_array.elems.iter().any(|item| 
+                                    if let Expr::Path(path) = item {
+                                        path.path.get_ident().unwrap().to_string() == ident.to_string() 
+                                    } else {
+                                        unimplemented!()
+                                    }
+                                )
+                            }
+                            _ => unimplemented!()
+                        } {
+                            true
+                        } else {
+                            false
+                        };
+
+
+                        let optional = if match &optional_args {
+                            Expr::Array(expr_array) => {
+                                expr_array.elems.iter().any(|item| 
+
+                                    if let Expr::Path(path) = item {
+                                        path.path.get_ident().unwrap().to_string() == ident.to_string() 
+                                    } else {
+                                        unimplemented!()
+                                    }
+                                )
+                            }
+                            _ => unimplemented!()
+                        } {
+                            true
+                        } else {
+                            false
+                        };
+
+
+                    if is_an_argument_macro {
+                        vec_of_processed_parts.push(ProcessPart::Macro(ProcessPartMacro {
+                            main_name_ident: main_macro_name_ident.clone(),
+                            ident: ident,
+                            optional,
+                            tokens: tokens.into(),
+                        }))
+                        // let global_macro_ident = format_ident!("{}_{}",global_view_name , macro_ident);
+                    }
+                     else {
+                        vec_of_processed_parts.push(ProcessPart::Neither(ProcessPartNeither {
+                            expr: Expr::Macro(expr_macro)
+                        }))
+                     }
+                    }
+                    exp => {
+                        // not a macro or an assign, therefore we construct a struct 
+                        // to enable the root element to be updated.
+
+                        vec_of_processed_parts.push(ProcessPart::Neither(ProcessPartNeither {
+                            expr: exp.clone(),
+                        }))
+                    }
+                }
+            }
+            Ok(ProcessPartArray{
+                parts: vec_of_processed_parts,
+            })
+           
+        }
+        else {
+            panic!("dsdsd")
+        }
+     
+    
+}
+}
+
+#[proc_macro]
+pub fn process_part(input: TokenStream) -> TokenStream {
+    
+    let processed_part_array = parse_macro_input!(input as ProcessPartArray);
+    let mut combined_quote = quote!();
+
+    for part in processed_part_array.parts {    
+        match part {
+    
+        ProcessPart::Macro(m) => {
+            let macro_name = m.ident.clone();
+        let global_macro_ident = format_ident!("{}_{}", m.main_name_ident, m.ident);
+        let tokens: proc_macro2::TokenStream = m.tokens.into();
+        
+        let exp = if m.optional{
+            quote!(
+                builder.#macro_name = Some(#global_macro_ident![#tokens]);
+            )
+        } else {
+            quote!(
+                builder.#macro_name = #global_macro_ident![#tokens];
+            )
+        };
+
+        
+
+        combined_quote = quote!(
+            #combined_quote
+            #exp
+        );
+        }
+        ProcessPart::Assign(assign) => {
+            let left_ident = assign.left_ident;
+        let expr = assign.right;
+            combined_quote = quote!(
+                #combined_quote
+                builder.args.#left_ident = #expr;
+            )
+        }
+        ProcessPart::Neither(ProcessPartNeither{expr}) => {   
+            combined_quote = quote!(
+                #combined_quote
+                let can_update_root = #expr;
+                match &mut builder.root {
+                seed::virtual_dom::Node::Element(ref mut ela) => {
+                    can_update_root.update_el( ela);
+                },
+                    _ => {}
+                }
+            )
+        }
+    }
+    
+    }
+    // panic!("{:#?}", combined_quote);
+    quote!({
+        #combined_quote
+    }).into()
+    // quote!().into()
+}
+
+
+struct AsElem {
+    elem_name_ident : syn::Ident,
+    affected_node_ident : syn::Ident,
+    exprs : Vec<Expr>,
+}
+
+
+impl Parse for AsElem {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let elem_name_ident = input.parse::<syn::Ident>()?;
+        let _comma = input.parse::<syn::token::Comma>()?;
+        let affected_node_ident = input.parse::<syn::Ident>()?;
+        let mut exprs = vec![];
+        if let Ok(_comma) = input.parse::<syn::token::Comma>(){
+            
+
+            let mut done = false;
+            while !done {
+                if let Ok(expr) = input.parse::<syn::Expr>(){
+                    exprs.push(expr);
+                } else {
+                    done = true;
+                }
+                if let Ok(_comma) = input.parse::<syn::token::Comma>(){
+
+                } else {
+                    done = true
+                }
+            }
+        }
+
+
+        // let count = input.parse::<syn::LitInt>()?;
+        Ok(
+            AsElem {
+                elem_name_ident,
+                affected_node_ident,
+                exprs,
+            }
+        )
+    }
+}
+
+
+
+#[proc_macro]
+pub fn as_tag(input: TokenStream) -> TokenStream {
+    let as_tag = parse_macro_input!(input as AsElem);
+
+//     let mut input_iter  = input.iter();
+
+//     let elem_name_ident = if let (elem_name_expr) = input_iter.next() {
+//          match elem_name_expr {
+//             Expr::Path(path) => {
+//                 let ident = path.path.get_ident().expect("Input to exist");
+//                 format_ident!("{}",ident.to_string.to_camel_case())
+//             }
+//             _ => {panic!("cannot determine main macro name")}
+//         }
+//     };
+
+//     let affected_node_ident = if let (affected_node_expr) = input_iter.next() {
+//         match affected_node_expr {
+//            Expr::Path(path) => {
+//                path.path.get_ident().expect("Affected_node to exist")
+//            }
+//            _ => {panic!("cannot determine main macro name")}
+//        }
+//    };
+
+    let affected_node_ident = as_tag.affected_node_ident;
+    let elem_name_ident = format_ident!("{}",as_tag.elem_name_ident.to_string().to_camel_case());
+    let exprs = as_tag.exprs.iter();
+
+    let mut exprs_quote = quote!();
+
+    for expr in exprs {
+        exprs_quote = quote!({
+            #exprs_quote
+            #expr.update_el(ela);
+        });
+    }
+    
+
+    let exp = quote!({
+            match #affected_node_ident {
+                seed::virtual_dom::Node::Element(ref mut ela) => {
+                    ela.tag = Tag::#elem_name_ident;
+                    #exprs_quote
+                }
+                _ => panic!("cannot use as_tag with Text or empty nodes")
+            }
+
+            #affected_node_ident
+    });
+
+   exp.into()
+    
+}
+
+
+struct ProcessSubMacroPartArray{
+    parts: Vec<ProcessSubMacroPart>,
+}
+
+
+
+enum ProcessSubMacroPart {
+    Assign(ProcessSubMacroPartAssign),
+    Neither(ProcessSubMacroPartNeither),
+}
+
+struct ProcessSubMacroPartAssign {
+    left_ident: syn::Ident,
+    right: Box<Expr>,
+}
+
+struct ProcessSubMacroPartNeither {
+    expr: Expr,
+}
+
+impl Parse for ProcessSubMacroPartArray {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let expr_array :ExprArray = input.parse()?;
+        let mut vec_of_processed_parts  = vec![];
+        for expr in expr_array.elems {
+            match expr {  
+
+            
+                    Expr::Assign(expr_assign) => {
+                        let left_ident = if let Expr::Path(path) = *expr_assign.left {
+                            let path = path.path;
+                            path.clone().get_ident().clone().expect("left ident to exist").clone()
+                        } else {
+                            unimplemented!()
+                        };
+
+                        vec_of_processed_parts.push(ProcessSubMacroPart::Assign(ProcessSubMacroPartAssign {
+                            left_ident: left_ident.clone(),
+                            right: expr_assign.right,
+                        }))
+                    }
+                    exp => {
+                        // not a macro or an assign, therefore we construct a struct 
+                        // to enable the root element to be updated.
+
+                        vec_of_processed_parts.push(ProcessSubMacroPart::Neither(ProcessSubMacroPartNeither {
+                            expr: exp.clone(),
+                        }))
+                    }
+                }
+            }
+            
+            Ok(ProcessSubMacroPartArray{
+                parts: vec_of_processed_parts,
+            })
+    
+}
+}
+
+#[proc_macro]
+pub fn process_submacro_part(input: TokenStream) -> TokenStream {
+    let processed_part_array = parse_macro_input!(input as ProcessSubMacroPartArray);
+    let mut combined_quote = quote!();
+
+      for part in processed_part_array.parts {    
+        match part {
+            ProcessSubMacroPart::Assign(assign) => {
+                let left_ident = assign.left_ident;
+                let expr = assign.right;
+                let exp = quote!(
+                    builder.args.#left_ident = #expr;
+                );
+                combined_quote = quote!(
+                    #combined_quote
+                    #exp
+                )
+            }
+            ProcessSubMacroPart::Neither(ProcessSubMacroPartNeither{expr}) => {   
+                let exp = quote!(
+                    #expr.update_el( &mut eld);
+                );
+
+                combined_quote = quote!(
+                    #combined_quote
+                    #exp
+                )
+            }
+    }
+}
+    quote!({
+        #combined_quote
+    }).into()
 }
