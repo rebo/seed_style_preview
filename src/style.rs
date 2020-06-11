@@ -13,6 +13,10 @@ use wasm_bindgen::JsCast;
 pub mod css_values;
 pub use css_values::*;
 
+
+pub mod row_col_layout;
+pub use row_col_layout::*;
+
 pub mod measures;
 
 pub mod theme;
@@ -34,6 +38,9 @@ mod from_traits;
 use std::collections::HashMap;
 
 pub fn s() -> Style {
+    STYLES_IN_ELEM.with(|styles| {
+        styles.borrow_mut().clear();
+    });
     Style::default()
 }
 
@@ -1256,7 +1263,6 @@ fn add_global_init_css_to_head(
 //         GLOBAL_STYLES_COUNT.with(|count| {
 //             let mut c = count.get();
 //             c += 1;
-//             count.set(c);
 //         });
 //     }
 
@@ -1550,6 +1556,7 @@ impl GlobalStyle {
         if selector == "html" {
             panic!("Sorry for now , You can only set html style directly in css.")
         }
+        
         self.styles.push((selector.to_string(), style));
         self
     }

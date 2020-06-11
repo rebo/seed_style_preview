@@ -59,14 +59,14 @@ pub fn em<T: Into<f64>>(val: T) -> ExactLength {
     }
 }
 
-pub fn hsl<T: Into<f64>>(h: T, s: T, l: T) -> CssColor {
+pub fn hsl<H: Into<f64>,S: Into<f64>,L: Into<f64>>(h: H, s: S, l: L) -> CssColor {
     let h = h.into();
     let s = s.into();
     let l = l.into();
     CssColor::Hsl(h, s, l)
 }
 
-pub fn rgb<T: Into<f64>>(r: T, g: T, b: T) -> CssColor {
+pub fn rgb<R: Into<f64>,G: Into<f64>,B: Into<f64>>(r: R, g: G, b: B) -> CssColor {
     let r = r.into();
     let g = g.into();
     let b = b.into();
@@ -74,7 +74,7 @@ pub fn rgb<T: Into<f64>>(r: T, g: T, b: T) -> CssColor {
     CssColor::Rgba(r, g, b, 1.0)
 }
 
-pub fn rgba<T: Into<f64>>(r: T, g: T, b: T, a: T) -> CssColor {
+pub fn rgba<R: Into<f64>,G: Into<f64>,B: Into<f64>,A: Into<f64>>(r: R ,g: G, b: B, a: A) -> CssColor {
     let r = r.into();
     let g = g.into();
     let b = b.into();

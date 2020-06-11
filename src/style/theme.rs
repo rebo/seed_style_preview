@@ -1339,7 +1339,7 @@ where
 pub fn only_and_below<T, F, Ms>(bp: T, content: F) -> Node<Ms>
 where
     T: BreakpointTheme + 'static,
-    F: Fn() -> Node<Ms>,
+    F: FnOnce() -> Node<Ms>,
 {
     let bp_pair = with_themes(ReturnBpTuple(bp));
     match bp_pair {
@@ -1359,10 +1359,34 @@ where
     }
 }
 
+pub fn at_breakpoint_and_above<T>(bp: T) -> bool 
+where
+    T: BreakpointTheme + 'static,{
+    let bp_pair = with_themes(ReturnBpTuple(bp));
+    match bp_pair {
+        (lower, Some(_higher)) => {
+            window()
+                .match_media(&format!("(min-width: {}px)", lower))
+                .unwrap()
+                .unwrap()
+                .matches()
+          
+        }
+        (lower, None) => {
+            window()
+                .match_media(&format!("(min-width: {}px)", lower))
+                .unwrap()
+                .unwrap()
+                .matches()
+          
+        }
+    }
+}
+
 pub fn only_and_above<T, F, Ms>(bp: T, content: F) -> Node<Ms>
 where
     T: BreakpointTheme + 'static,
-    F: Fn() -> Node<Ms>,
+    F: FnOnce() -> Node<Ms>,
 {
     let bp_pair = with_themes(ReturnBpTuple(bp));
     match bp_pair {
@@ -1396,7 +1420,7 @@ where
 pub fn only<T, F, Ms>(bp: T, content: F) -> Node<Ms>
 where
     T: BreakpointTheme + 'static,
-    F: Fn() -> Node<Ms>,
+    F: FnOnce() -> Node<Ms>,
 {
     let bp_pair = with_themes(ReturnBpTuple(bp));
     match bp_pair {
@@ -1433,7 +1457,7 @@ where
 pub fn except<T, F, Ms>(bp: T, content: F) -> Node<Ms>
 where
     T: BreakpointTheme + 'static,
-    F: Fn() -> Node<Ms>,
+    F: FnOnce() -> Node<Ms>,
 {
     let bp_pair = with_themes(ReturnBpTuple(bp));
 

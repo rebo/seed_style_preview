@@ -1,10 +1,11 @@
+#![feature(track_caller)]
 extern crate darling;
 extern crate proc_macro;
 use self::proc_macro::TokenStream;
 use heck::CamelCase;
 use heck::KebabCase;
 use heck::SnakeCase;
-
+use std::cell::RefCell;
 use quote::{format_ident, quote};
 use syn::parse::{Parse, ParseStream, Result};
 use syn::{parse_macro_input, DeriveInput, Expr, ExprArray};
@@ -970,7 +971,7 @@ match fnarg {
         FnArg::Typed(t) => {
             match &*t.pat {
                 Pat::Ident(syn::PatIdent { ident, .. }) => ident.to_string(), //syn::parse_quote!(&#ident),
-                _ => unimplemented!("Only supported on simplest argument expressions"),
+                _ => unimplemented!("Cannot get arg name"),
             }
         }
 }
@@ -988,7 +989,7 @@ fn get_single_type_name(fnarg : &FnArg) -> String {
                         let path = path.get_ident().expect("Are you sure you have passed in an argument struct");
                         path.to_string()
                     }, //syn::parse_quote!(&#ident),
-                    _ => unimplemented!("Only supported on simplest argument expressions"),
+                    _ => unimplemented!("cannot get single type name"),
                 }
             }
     }
@@ -1026,7 +1027,7 @@ fn get_node_msg_type_name(fnarg : &FnArg) -> String {
                     
                     
                     }, //syn::parse_quote!(&#ident),
-                    _ => unimplemented!("Only supported on simplest argument expressions"),
+                    _ => unimplemented!("Cannot get node msg type name"),
                 }
             }
     }
@@ -1052,15 +1053,34 @@ fn is_option_type(fnarg : &FnArg) -> bool {
                                     match generic_args.args.first().expect("generic args to exist"){
                                         syn::GenericArgument::Type(syn::Type::Path(type_path)) => {
                                             if type_path.path.segments.first().expect("option to have a type").ident.to_string()!="Node" {
-                                                panic!("Option does not contain a Node")
+                                                panic!("Option does not contain a Node or a tuple")
                                             }
                                         }
+                                        syn::GenericArgument::Type(syn::Type::Tuple(syn::TypeTuple{elems,..})) => {
+
+                                            if let Some(the_type) = elems.first() {
+                                                match the_type {
+                                                    syn::Type::Path(syn::TypePath { path, .. }) => {
+                                                        if path.segments.first().expect("option to have a type").ident.to_string()!="Node" {
+                                                            panic!("First argument to tuple is not a Node")
+                                                        }
+                                                    }
+                                                    _ => unimplemented!()
+                                                }
+
+                                                
+                                                  
+                                        } else {
+                                          panic!("tuple doesnt have 2 arguments")
+                                        } 
+                                    }
                                         _ => unimplemented!()
                                     }
                                     //     syn::Type::Path(path) => {}
                                     //     _ => unimplemented!(),
                                     // }
                                 }
+                       
                                 _ => unimplemented!()
                             }
                             true
@@ -1078,11 +1098,145 @@ fn is_option_type(fnarg : &FnArg) -> bool {
                     
                     
                     }, //syn::parse_quote!(&#ident),
-                    _ => unimplemented!("Only supported on simplest argument expressions"),
+                    syn::Type::Tuple(_) =>false,
+                    exp => unimplemented!("Cannot get option type this was passed instead: {:#?}", exp),
                 }
             }
     }
     }
+
+
+    fn get_sub_arg_type(fnarg: &FnArg) -> Option<syn::Ident> {
+        match fnarg {
+            FnArg::Receiver(_) => panic!("cannot be a method with self receiver"),
+            FnArg::Typed(t) => {
+                // panic!("{:#?}", t);
+                match &*t.ty {
+                    syn::Type::Path(syn::TypePath { path, .. }) => {
+                        let segment = path.segments.last().expect("segment to exist");
+                        // panic!("{:#?}", segment);
+                        if segment.ident.to_string() != "Node" && segment.ident.to_string() != "Option"  && segment.ident.to_string() != "Vec"     {
+                            panic!("Node type is not Node, Vec<Node> or Option")
+                        }
+
+                        if segment.ident.to_string() == "Option" {
+                            match &segment.arguments {
+                                syn::PathArguments::AngleBracketed(generic_args) => {
+                                    match generic_args.args.first().expect("generic args to exist"){
+                                        syn::GenericArgument::Type(syn::Type::Tuple(syn::TypeTuple{elems,..})) => {
+                                            if let Some(the_type) = elems.first() {
+                                            
+                                                match the_type {
+                                                    syn::Type::Path(syn::TypePath { path, .. }) => {
+                                                        if path.segments.first().expect("option to have a type").ident.to_string()!="Node" {
+                                                            panic!("first arg not node");
+                                                        }
+                                                    }
+                                                    _ => unimplemented!()
+                                                }
+    
+                                        } else {
+                                          panic!("tuple doesnt have 2 arguments")
+                                        } 
+
+                                            if let Some(the_type) = elems.last() {
+                                                match the_type {
+                                                    syn::Type::Path(syn::TypePath { path, .. }) => {
+                                                        let path = path.get_ident().expect("Are you sure you have passed in an argument struct");
+                                                        Some(path.clone())
+                                                    }
+                                                    _ => unimplemented!()
+                                                }
+                                        } else {
+                                            None
+                                        }      
+                                }
+                                
+                                        _ => None
+                                    }
+                                    //     syn::Type::Path(path) => {}
+                                    //     _ => unimplemented!(),
+                                    // }
+                                }
+                                _ => None
+                            }
+                        }  else if segment.ident.to_string() == "Vec" {
+                            match &segment.arguments {
+                                syn::PathArguments::AngleBracketed(generic_args) => {
+                                    match generic_args.args.first().expect("generic args to exist"){
+                                        syn::GenericArgument::Type(syn::Type::Tuple(syn::TypeTuple{elems,..})) => {
+                                            if let Some(the_type) = elems.first() {
+                                            
+                                                match the_type {
+                                                    syn::Type::Path(syn::TypePath { path, .. }) => {
+                                                        if path.segments.first().expect("vec to have a type").ident.to_string()!="Node" {
+                                                            panic!("first arg not node");
+                                                        }
+                                                    }
+                                                    _ => unimplemented!()
+                                                }
+    
+                                        } else {
+                                          panic!("tuple doesnt have 2 arguments")
+                                        } 
+
+                                            if let Some(the_type) = elems.last() {
+                                                match the_type {
+                                                    syn::Type::Path(syn::TypePath { path, .. }) => {
+                                                        let path = path.get_ident().expect("Are you sure you have passed in an argument struct");
+                                                        Some(path.clone())
+                                                    }
+                                                    _ => unimplemented!()
+                                                }
+                                        } else {
+                                            None
+                                        }      
+                                }
+                                
+                                        _ => None
+                                    }
+                                    //     syn::Type::Path(path) => {}
+                                    //     _ => unimplemented!(),
+                                    // }
+                                }
+                                _ => None
+                            }
+                        } else {
+                            if segment.ident.to_string() != "Node" &&  segment.ident.to_string() != "Vec"{
+                                panic!("argument type is not Node or Vec")
+                            }
+                            None
+                        }
+
+            
+                        // let path = path.get_ident().unwrap();
+                        
+                        // path.to_string();
+                    
+                    
+                    }, //syn::parse_quote!(&#ident),
+
+
+                    syn::Type::Tuple(syn::TypeTuple{elems, ..}) => {
+                       
+                        if let Some(the_type) = elems.last() {
+                            match the_type {
+                                syn::Type::Path(syn::TypePath { path, .. }) => {
+                                    let path = path.get_ident().expect("Are you sure you have passed in an argument struct");
+                                    Some(path.clone())
+                                }
+                                _ => unimplemented!()
+                            }
+                    } else {
+                        None
+                    }
+                    },
+                    _ => None,
+            }
+        }
+    }
+}
+
     
      
 fn is_vec_type(fnarg : &FnArg) -> bool {
@@ -1093,7 +1247,7 @@ fn is_vec_type(fnarg : &FnArg) -> bool {
                     syn::Type::Path(syn::TypePath { path, .. }) => {
                         let segment = path.segments.last().expect("segment to exist");
                         // panic!("{:#?}", segment);
-                        if segment.ident.to_string() != "Node" && segment.ident.to_string() != "Vec" {
+                        if segment.ident.to_string() != "Node" && segment.ident.to_string() != "Vec" && segment.ident.to_string() != "Option"{
                             panic!("Node type is not Node or Vec")
                         }
 
@@ -1106,12 +1260,28 @@ fn is_vec_type(fnarg : &FnArg) -> bool {
                                                 panic!("Vec does not contain a Node")
                                             }
                                         }
+                                        syn::GenericArgument::Type(syn::Type::Tuple(syn::TypeTuple{elems,..})) => {
+
+                                            if let Some(the_type) = elems.first() {
+                                                match the_type {
+                                                    syn::Type::Path(syn::TypePath { path, .. }) => {
+                                                        if path.segments.first().expect("option to have a type").ident.to_string()!="Node" {
+                                                            panic!("First argument to tuple is not a Node")
+                                                        }
+                                                    }
+                                                    _ => unimplemented!()
+                                                }
+
+                                                
+                                                  
+                                        } else {
+                                          panic!("tuple doesnt have 2 arguments")
+                                        } 
+                                    }
                                         _ => unimplemented!()
                                     }
-                                    //     syn::Type::Path(path) => {}
-                                    //     _ => unimplemented!(),
-                                    // }
                                 }
+                        
                                 _ => unimplemented!()
                             }
                             true
@@ -1123,7 +1293,8 @@ fn is_vec_type(fnarg : &FnArg) -> bool {
                         }
                     
                     }, 
-                    _ => unimplemented!("Only supported on simplest argument expressions"),
+                    syn::Type::Tuple(_) =>false,
+                    _ => unimplemented!("Cannot get vec type"),
                 }
             }
     }
@@ -1158,11 +1329,19 @@ fn is_vec_type(fnarg : &FnArg) -> bool {
                             }
                         
                         }, 
-                        _ => unimplemented!("Only supported on simplest argument expressions"),
+                        _ => unimplemented!("Cannot check children"),
                     }
                 }
         }
         }   
+
+
+        
+thread_local! {
+    static COUNTER: RefCell<u32> = RefCell::new(1);
+}
+
+#[track_caller]        
 #[proc_macro_attribute]
 pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
     
@@ -1176,6 +1355,15 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input_fn_string = input_fn.sig.ident.to_string();
     let view_ident_string = input_fn_string.trim_end_matches("_view");
 
+    let location = COUNTER.with(|rc_c| {
+        let mut c = rc_c.borrow_mut();
+        *c += 1;
+        *c
+    });
+
+
+
+    let view_ident_long = format_ident!("{}_{}", view_ident_string, location.to_string());
     let view_ident = format_ident!("{}", view_ident_string);
 
     // Names of the root and children view function arguments
@@ -1243,12 +1431,21 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
     let mut vec_of_all_args = vec![];
     let mut vec_of_optional_args = vec![];
 
+    let mut use_shortcuts = quote!();
+
     for input in &mut input_iter {
         let arg_name = format_ident!("{}",get_arg_name(input));
+        let qualified_arg_name = format_ident!("{}_{}", view_ident ,get_arg_name(input));
+        let arg_name_long = format_ident!( "{}_{}_{}",  view_ident ,get_arg_name(input), location );
+
+        use_shortcuts = quote!(
+            #use_shortcuts
+            use #qualified_arg_name as #arg_name;
+        );
 
         vec_of_all_args.push( arg_name.clone() );
         
-        vec_of_args.push( (arg_name.clone() , is_option_type(input), is_vec_type(input)  ) );
+        vec_of_args.push( (arg_name.clone() , is_option_type(input), is_vec_type(input), get_sub_arg_type(input) )   );
 
         if is_option_type(input) {
             vec_of_optional_args.push( arg_name.clone() );
@@ -1261,7 +1458,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
 
     
 
-    let mut view_builder_inner_quote = quote! { root: Node<#msg_type_ident>,};
+    let mut view_builder_inner_quote = quote! { pub root: Node<#msg_type_ident>,};
     let mut view_builder_empty_impl_inner_quote = quote! {root: div![],};
     let mut view_function_call_impl_inner_quote = if has_args {
         quote! {self.args, self.root, children, }
@@ -1269,13 +1466,16 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
         quote! {self.root, children, }
     };
 
-    for (name, optional, is_a_vec) in vec_of_args.iter() {
+    for (name, optional, is_a_vec, maybe_arg_type) in vec_of_args.iter() {
     
-        let new_line = match (*optional, *is_a_vec) {
-            (true, false) => quote! {  #name: Option<Node<#msg_type_ident>>,},
-            (false, false) => quote! {  #name: Node<#msg_type_ident>,},
-            (false, true) => quote! {  #name: Vec<Node<#msg_type_ident>>,},
-            (true, true) => panic!("You should never have an optional vec arg"),
+        let new_line = match (*optional, *is_a_vec, maybe_arg_type) {
+            (true, false, Some(arg_type)) => quote! {  #name: Option<(Node<#msg_type_ident>, #arg_type)>,},
+            (false, false, Some(arg_type)) => quote! {  #name: (Node<#msg_type_ident>, #arg_type),},
+            (false, true , Some(arg_type)) => quote! {  #name: Vec<(Node<#msg_type_ident>, #arg_type)>,},
+            (true, false, None) => quote! {  #name: Option<Node<#msg_type_ident>>,},
+            (false, false, None) => quote! {  #name: Node<#msg_type_ident>,},
+            (false, true , None) => quote! {  #name: Vec<Node<#msg_type_ident>>,},
+            (true, true, _) => panic!("You should never have an optional vec arg"),
         };
 
         view_builder_inner_quote = quote! {
@@ -1283,11 +1483,14 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
             #new_line
         };
 
-        let new_line = match (*optional, *is_a_vec) {
-            (true, false) =>   quote! {  #name: None,},
-            (false, false) =>  quote! {  #name: empty![],},
-            (false, true) =>  quote! {  #name: vec![],},
-            (true, true) => panic!("You should never have an optional vec arg"),
+        let new_line = match (*optional, *is_a_vec, maybe_arg_type) {
+            (true, false, Some(_arg_type))  => quote! {  #name: None,},
+            (false, false, Some(arg_type)) => quote! {  #name: (empty![], #arg_type::default() ),},
+            (false, true , Some(_arg_type)) =>quote! {  #name: vec![],},
+            (true, false, None) =>   quote! {  #name: None,},
+            (false, false, None) =>  quote! {  #name: empty![],},
+            (false, true, None) =>  quote! {  #name: vec![],},
+            (true, true, _) => panic!("You should never have an optional vec arg"),
         };
 
 
@@ -1295,6 +1498,22 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
             #view_builder_empty_impl_inner_quote
             #new_line
         };
+
+
+        // view_builder_update_el_defn_quote = quote! {
+        //     trait UpdateEl#view_builder {
+        //         fn update_el(self, &mut el:El);
+        //     }
+        // };
+
+
+
+        // view_builder_update_el_impl_quote = quote! {
+        //     impl UpdateEl#view_builder for {
+        //         fn update_el(self, &mut el:El){}
+
+        //     }
+        // };
 
         // let new_line = if *optional {
         //     quote! {  self.#name,}
@@ -1339,25 +1558,25 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
 
     if has_args {
         let view_args_ident = view_args_ident.clone().unwrap();
-        args_quote = quote!(args: #view_args_ident,);
+        args_quote = quote!(pub args: #view_args_ident,);
         args_impl_quote = quote!(args: #view_args_ident::default(),);
     }
    
     let view_builder_quote = quote! {
-        struct #view_builder<#msg_type_ident> where #msg_type_ident : 'static {
+        pub struct #view_builder<#msg_type_ident> where #msg_type_ident : 'static {
             #args_quote
             #view_builder_inner_quote
         }
 
         impl <#msg_type_ident> #view_builder<#msg_type_ident>   where #msg_type_ident : 'static {
-            fn default_empty() -> #view_builder::<#msg_type_ident>{
+            pub fn default_empty() -> #view_builder::<#msg_type_ident>{
                 #view_builder::<#msg_type_ident> {
                     #args_impl_quote
                     #view_builder_empty_impl_inner_quote
                 }
             }
 
-            fn render(mut self) -> Node<#msg_type_ident> { 
+            pub fn render(mut self) -> Node<#msg_type_ident> { 
                 
                 #view_render_impl_quote
         
@@ -1366,7 +1585,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
                 )
             }
 
-            fn update_el(self, elc: &mut El<#msg_type_ident>) {
+            pub fn update_el(self, elc: &mut El<#msg_type_ident>) {
                 self.render().update_el(elc);
             }
         }
@@ -1377,23 +1596,211 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
    
     let mut args_macro_quote = quote! {};
 
-    for (name, _optional , _is_a_vec) in vec_of_args.iter() {
-        let name = format_ident!("{}_{}", view_ident, name);
+    for (name, optional , is_a_vec, maybe_arg_type ) in vec_of_args.iter() {
+        let builder_field_name = name.clone();
+        let name_long = format_ident!("{}_{}_{}", view_ident, name, location.to_string());
+        let qualified_name = format_ident!("{}_{}", view_ident, name);
+        let has_args = maybe_arg_type.is_some();
+        let node_name = format_ident!("Node{}", qualified_name.to_string().to_camel_case());
+
+
+
+        let macro_item_impl_quote =  
         
-        let macro_item_impl_quote = quote! {
-            #[allow(unused_macros)]
         
-           macro_rules! #name {
-                ( $($ part:tt)* ) => {
-                   {
-                       #[allow(unused_mut)]
-                       let mut eld = El::empty(seed::virtual_dom::Tag::Div);
-                       process_submacro_part!([$($part)*]); 
-                       Node::Element(eld)
-                   }
-               };
-           }
+        match (optional, is_a_vec, has_args) { 
+            (false,false,false) => quote! {
+                #[allow(unused_macros)]
+                #[macro_export]
+                macro_rules! #name_long {
+                    ($($ part:tt)* ) => {
+                        {
+                            #[allow(unused_mut)]
+                            let mut eld = El::empty(seed::virtual_dom::Tag::Div);
+                            process_submacro_part!([#qualified_name, [$($part)*]])
+                            // empty![]
+                        }
+                    };
+                }   
+                pub use #name_long as #qualified_name;
+                
+                
+                pub struct #node_name<#msg_type_ident> (pub Node<#msg_type_ident>);
+
+                impl <T> LocalUpdateEl<El<T>> for #node_name<T> where T:'static{
+                    fn update_el(self, _el: &mut El<T>){
+                        // we dont really need _el
+                        
+
+                         if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                            sa.update(|builder| builder.#builder_field_name = self.0);
+                         }
+                    }
+                }
+                
+            },
+            (false,false,true) =>  {
+                let arg_type = maybe_arg_type.clone().unwrap();
+                quote! {
+                    #[macro_export]
+                    macro_rules! #name_long {
+                    (  $($ part:tt)* ) => {
+                        {
+                            #[allow(unused_mut)]
+                            let mut argument_struct = #arg_type::default();
+                            let mut eld = El::empty(seed::virtual_dom::Tag::Div);
+                            process_submacro_part_has_args!([#qualified_name,[$($part)*]])
+                            
+                        }
+                    };
+                }
+
+                pub use #name_long as #qualified_name;
+                
+                pub struct #node_name<#msg_type_ident> (pub (Node<#msg_type_ident>,#arg_type  ));
+
+                impl <T> LocalUpdateEl<El<T>> for #node_name<T> where T:'static{
+                    fn update_el(self, _el: &mut El<T>){
+                        // we dont really need _el
+                        
+
+                         if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                            sa.update(|builder| builder.#builder_field_name = self.0);
+                         }
+                    }
+                }
+            
+            }},
+            (false,true,false) =>  quote! {
+                #[macro_export]
+                macro_rules! #name_long {
+                    ($($ part:tt)* ) => {
+                        {
+                            #[allow(unused_mut)]
+                            let mut eld = El::empty(seed::virtual_dom::Tag::Div);
+                            process_submacro_part_a_vec!([#qualified_name,[$($part)*]])
+                        }
+                    };
+                }
+                    pub use #name_long as #qualified_name;
+                    pub struct #node_name<#msg_type_ident> (pub Node<#msg_type_ident>);
+
+                    impl <T> LocalUpdateEl<El<T>> for #node_name<T> where T:'static{
+                        fn update_el(self, _el: &mut El<T>){
+                            // we dont really need _el
+                            
+    
+                             if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                                sa.update(|builder| builder.#builder_field_name.push(self.0));
+                             }
+                        }
+                    }
+
+
+                
+            
+            },
+            (false,true,true) =>  {
+                let arg_type = maybe_arg_type.clone().unwrap();
+                quote! {
+                    #[macro_export]
+                    macro_rules! #name_long {
+                    ($($ part:tt)* ) => {
+                        {
+                            #[allow(unused_mut)]
+                            let mut argument_struct = #arg_type::default();
+                            let mut eld = El::empty(seed::virtual_dom::Tag::Div);
+                            process_submacro_part_a_vec_has_args!([#qualified_name,[$($part)*]])
+                            
+                        }
+                    };
+                }
+                pub use #name_long as #qualified_name;
+
+                pub struct #node_name<#msg_type_ident> (pub (Node<#msg_type_ident>,#arg_type  ));
+
+                impl <T> LocalUpdateEl<El<T>> for #node_name<T> where T:'static{
+                    fn update_el(self, _el: &mut El<T>){
+                        // we dont really need _el
+                        
+
+                         if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                            sa.update(|builder| builder.#builder_field_name.push(self.0));
+                         }
+                    }
+                }
+
+            
+            }},
+            (true,false,false) => {
+                
+                quote! {
+                    #[macro_export]
+                    macro_rules! #name_long {
+                    ( $($ part:tt)* ) => {
+                        {
+                            #[allow(unused_mut)]
+                            
+                            let mut eld = El::empty(seed::virtual_dom::Tag::Div);
+                            process_submacro_part_optional!([#qualified_name,[$($part)*]])
+                            
+                        }
+                    };
+                }
+                pub use #name_long as #qualified_name;
+
+              
+                pub struct #node_name<#msg_type_ident> (pub Node<#msg_type_ident>);
+
+                impl <T> LocalUpdateEl<El<T>> for #node_name<T> where T:'static{
+                    fn update_el(self, _el: &mut El<T>){
+                        // we dont really need _el
+                        
+
+                         if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                            sa.update(|builder| builder.#builder_field_name = Some(self.0));
+                         }
+                    }
+                }  
+            
+            }},
+            (true,false,true) =>  {
+                let arg_type = maybe_arg_type.clone().unwrap();
+                quote! {
+                    #[macro_export]
+                    macro_rules! #name_long {
+                    (  $($ part:tt)* ) => {
+                        {
+                            #[allow(unused_mut)]
+                            let mut argument_struct = #arg_type::default();
+                            let mut eld = El::empty(seed::virtual_dom::Tag::Div);
+                            process_submacro_part_optional_has_args!([#qualified_name,[$($part)*]])
+                            
+                        }
+                    };
+                }
+                use #name_long as #qualified_name;
+
+                pub struct #node_name<#msg_type_ident> (pub (Node<#msg_type_ident>,#arg_type  ));
+
+                impl <T> LocalUpdateEl<El<T>> for #node_name<T> where T:'static{
+                    fn update_el(self, _el: &mut El<T>){
+                        // we dont really need _el
+                        
+
+                         if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                            sa.update(|builder| builder.#builder_field_name = Some(self.0));
+                         }
+                    }
+                }
+
+
+            }},
+            (true,true,_) =>  panic!("You cant have optional as well as vector args"),
+            
+            
         };
+
 
         args_macro_quote = quote! {
            #args_macro_quote
@@ -1408,21 +1815,30 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
 
     #args_macro_quote
 
-    #[macro_export]
     #[allow(unused_macros)]
-    macro_rules! #view_ident {
+    #[macro_export]
+     macro_rules! #view_ident_long {
+
+        
+
         ( $($ part:tt)* ) => {
+                
                 {
+
+                    #use_shortcuts
                     #[allow(unused_mut)]
                     let mut builder = #view_builder::<_>::default_empty();
                         
-                    process_part!([#main_view_macro_name_view_ident, [#(#vec_of_all_args),*], [#(#vec_of_optional_args),*] , [#(#vec_of_vec_args),*] , [$($part)*]]) ;
+                    process_part!([#main_view_macro_name_view_ident, [#(#vec_of_all_args),*], [$($part)*]]) ;
                             
                     builder.render()
                 }
             };
     }
+    pub use #view_ident_long as #view_ident;
     };
+
+    
 
     let inner_block = input_fn.block;
     input_fn.block = syn::parse_quote! {{
@@ -1476,7 +1892,7 @@ enum ProcessPart {
     Neither(ProcessPartNeither),
 }
 
-struct ProcessPartAssign {
+struct ProcessPartAssign{
     left_ident: syn::Ident,
     right: Box<Expr>,
 }
@@ -1484,12 +1900,11 @@ struct ProcessPartAssign {
 struct ProcessPartMacro {
     main_name_ident: syn::Ident,
     ident: syn::Ident,
-    optional: bool,
-    is_a_vec: bool,
     tokens: TokenStream,
 }
 
 struct ProcessPartNeither {
+    main_name_ident: syn::Ident,
     expr: Expr,
 }
 
@@ -1508,8 +1923,7 @@ impl Parse for ProcessPartArray {
         
         // all_args and optional_args are needed when processing a macro expression.
         let all_args = iter_for_args.next().cloned().expect("This ExprArray should exist");
-        let optional_args = iter_for_args.next().cloned().expect("This ExprArray should exist");
-        let vec_args = iter_for_args.next().cloned().expect("This ExprArray should exist");
+        
 
         let expr = iter_for_args.next().cloned().expect("expression to exist");
         
@@ -1553,90 +1967,53 @@ impl Parse for ProcessPartArray {
                             right: expr_assign.right,
                         }))
                     }
-                    Expr::Macro(expr_macro) => {
-                        let path = expr_macro.mac.path.clone();
+                    // Expr::Macro(expr_macro) => {
+                    //     let path = expr_macro.mac.path.clone();
 
-                        let ident = path.clone().get_ident().clone().expect("expr_macro inside Expr::Macro to exist").clone();
-                        let tokens = expr_macro.mac.tokens.clone();
+                    //     let ident = path.clone().get_ident().clone().expect("expr_macro inside Expr::Macro to exist").clone();
+                    //     let tokens = expr_macro.mac.tokens.clone();
 
-                        // if ident is not included in all_args then it is not an argument
+                    //     // if ident is not included in all_args then it is not an argument
 
-                        let is_an_argument_macro  = if match &all_args {
-                            Expr::Array(expr_array) => {
-                                expr_array.elems.iter().any(|item| 
-                                    if let Expr::Path(path) = item {
-                                        path.path.get_ident().unwrap().to_string() == ident.to_string() 
-                                    } else {
-                                        unimplemented!()
-                                    }
-                                )
-                            }
-                            _ => unimplemented!()
-                        } {
-                            true
-                        } else {
-                            false
-                        };
-
-
-                        let optional = if match &optional_args {
-                            Expr::Array(expr_array) => {
-                                expr_array.elems.iter().any(|item| 
-
-                                    if let Expr::Path(path) = item {
-                                        path.path.get_ident().unwrap().to_string() == ident.to_string() 
-                                    } else {
-                                        unimplemented!()
-                                    }
-                                )
-                            }
-                            _ => unimplemented!()
-                        } {
-                            true
-                        } else {
-                            false
-                        };
-
-                        let is_a_vec = if match &vec_args {
-                            Expr::Array(expr_array) => {
-                                expr_array.elems.iter().any(|item| 
-
-                                    if let Expr::Path(path) = item {
-                                        path.path.get_ident().unwrap().to_string() == ident.to_string() 
-                                    } else {
-                                        unimplemented!()
-                                    }
-                                )
-                            }
-                            _ => unimplemented!()
-                        } {
-                            true
-                        } else {
-                            false
-                        };
+                    //     let is_an_argument_macro  = if match &all_args {
+                    //         Expr::Array(expr_array) => {
+                    //             expr_array.elems.iter().any(|item| 
+                    //                 if let Expr::Path(path) = item {
+                    //                     path.path.get_ident().unwrap().to_string() == ident.to_string() 
+                    //                 } else {
+                    //                     unimplemented!()
+                    //                 }
+                    //             )
+                    //         }
+                    //         _ => unimplemented!()
+                    //     } {
+                    //         true
+                    //     } else {
+                    //         false
+                    //     };
 
 
-                    if is_an_argument_macro {
-                        vec_of_processed_parts.push(ProcessPart::Macro(ProcessPartMacro {
-                            main_name_ident: main_macro_name_ident.clone(),
-                            ident: ident,
-                            optional,
-                            is_a_vec,
-                            tokens: tokens.into(),
-                        }))
-                        // let global_macro_ident = format_ident!("{}_{}",global_view_name , macro_ident);
-                    }
-                     else {
-                        vec_of_processed_parts.push(ProcessPart::Neither(ProcessPartNeither {
-                            expr: Expr::Macro(expr_macro)
-                        }))
-                     }
-                    }
+                    // if is_an_argument_macro {
+                    //     vec_of_processed_parts.push(ProcessPart::Macro(ProcessPartMacro {
+                    //         main_name_ident: main_macro_name_ident.clone(),
+                    //         ident: ident,
+                    //         tokens: tokens.into(),
+                    //     }))
+                    //     // let global_macro_ident = format_ident!("{}_{}",global_view_name , macro_ident);
+                    // }
+                    //  else {
+                    //     vec_of_processed_parts.push(ProcessPart::Neither(ProcessPartNeither {
+                    //         main_name_ident: main_macro_name_ident.clone(),
+                    //         expr: Expr::Macro(expr_macro)
+                    //     }))
+                    //  }
+                    // }
                     exp => {
                         // not a macro or an assign, therefore we construct a struct 
                         // to enable the root element to be updated.
 
                         vec_of_processed_parts.push(ProcessPart::Neither(ProcessPartNeither {
+                            main_name_ident: main_macro_name_ident.clone(),
                             expr: exp.clone(),
                         }))
                     }
@@ -1665,51 +2042,100 @@ pub fn process_part(input: TokenStream) -> TokenStream {
         match part {
     
         ProcessPart::Macro(m) => {
-            let macro_name = m.ident.clone();
-        let global_macro_ident = format_ident!("{}_{}", m.main_name_ident, m.ident);
-        let tokens: proc_macro2::TokenStream = m.tokens.into();
-        
-        let exp = match (m.optional, m.is_a_vec){
-            (true, false) =>  quote!(   builder.#macro_name = Some(#global_macro_ident![#tokens]); ),
-            (false, false) =>   quote!(     builder.#macro_name = #global_macro_ident![#tokens]; ),
-            (false, true) => quote!(   builder.#macro_name.push(#global_macro_ident![#tokens]); ),
-            (true, true) => panic!("You should never have an optional vec arg"),
-        };
-           
+            
+            let global_macro_ident = format_ident!("{}", m.ident);
+            let tokens: proc_macro2::TokenStream = m.tokens.into();
+            let view_builder = format_ident!("{}Builder",  m.main_name_ident.to_string().to_camel_case());
+    
+            combined_quote = quote!(
+                
+                #combined_quote
+                let empty = empty![];
+                let mut root_backup = std::mem::replace(&mut builder.root, empty);
 
-        combined_quote = quote!(
-            #combined_quote
-            #exp
-        );
+                let empty_builder = #view_builder::<_>::default_empty();
+                let backedup_builder = std::mem::replace(&mut builder, empty_builder);
+
+                let sa_builder = use_state(||backedup_builder);
+                
+                illicit::child_env!(StateAccess<#view_builder<_>> => sa_builder).enter(|| {
+                    
+                match &mut root_backup {
+                    seed::virtual_dom::Node::Element(ref mut ela) => {
+                    let nodes = #global_macro_ident![#tokens];
+                    nodes.update_el(ela);
+                    }
+                    _ => {panic!("huh")}
+                }
+
+                });
+
+                builder = sa_builder.remove().unwrap();
+                let _ = std::mem::replace(&mut builder.root, root_backup);
+                
+            );
+    
         }
         ProcessPart::Assign(assign) => {
-            let left_ident = assign.left_ident;
+        let left_ident = assign.left_ident;
         let expr = assign.right;
+        
+        if left_ident.to_string() == "extend" {
+            combined_quote = quote!(
+                #combined_quote
+                builder.root = #expr;
+            )
+        } else {
+        
             combined_quote = quote!(
                 #combined_quote
                 builder.args.#left_ident = #expr;
             )
         }
-        ProcessPart::Neither(ProcessPartNeither{expr}) => {   
-            combined_quote = quote!(
-                #combined_quote
-                let can_update_root = #expr;
-                match &mut builder.root {
-                seed::virtual_dom::Node::Element(ref mut ela) => {
-                    can_update_root.update_el( ela);
-                },
-                    _ => {}
-                }
-            )
+        }
+        ProcessPart::Neither(ProcessPartNeither{
+            expr, main_name_ident}) => {   
+                let view_builder = format_ident!("{}Builder",  main_name_ident.to_string().to_camel_case());
+    
+                combined_quote = quote!(
+                    
+                    #combined_quote
+                    let empty = empty![];
+                    let mut root_backup = std::mem::replace(&mut builder.root, empty);
+    
+                    let empty_builder = #view_builder::<_>::default_empty();
+                    let backedup_builder = std::mem::replace(&mut builder, empty_builder);
+    
+                    let sa_builder = use_state(||backedup_builder);
+                    
+                    illicit::child_env!(StateAccess<#view_builder<_>> => sa_builder).enter(|| {
+                        
+                    match &mut root_backup {
+                        seed::virtual_dom::Node::Element(ref mut ela) => {
+                        #expr.update_el(ela);
+                        }
+                        _ => {panic!("huh")}
+                    }
+    
+                    });
+    
+                    builder = sa_builder.remove().unwrap();
+                    let _ = std::mem::replace(&mut builder.root, root_backup);
+                    
+                );
+        
+        
+        
+       
+          
+    // quote!().into()
+        }
         }
     }
-    
-    }
-    // panic!("{:#?}", combined_quote);
-    quote!({
+     // panic!("{:#?}", combined_quote);
+     quote!({
         #combined_quote
     }).into()
-    // quote!().into()
 }
 
 
@@ -1775,15 +2201,43 @@ pub fn as_tag(input: TokenStream) -> TokenStream {
     
 
     let exp = quote!({
-            match #affected_node_ident {
+            let mut change_from_text_to_node = true;
+
+            if let seed::virtual_dom::Node::Element(_) = &#affected_node_ident {
+                change_from_text_to_node = false;
+            }
+
+            let mut new_node = if change_from_text_to_node {
+                
+                let empty_node = Node::Empty;
+
+                let old_text_node = std::mem::replace(&mut #affected_node_ident , empty_node);
+                
+                let mut el  =  El::empty(Tag::#elem_name_ident);
+                let mut new_node_inner = seed::virtual_dom::Node::Element(el);
+
+                if let seed::virtual_dom::Node::Text(text_node) =old_text_node {
+                    match new_node_inner  {
+                        seed::virtual_dom::Node::Element(ref mut ela) => {
+                            ela.children.push(seed::virtual_dom::Node::Text(text_node));
+                        }
+                        _ => panic!("cannot use as_tag with Text or empty nodes")
+                    }
+                } ;
+                
+                new_node_inner
+            } else {
+                #affected_node_ident
+            };
+
+            match new_node {
                 seed::virtual_dom::Node::Element(ref mut ela) => {
                     ela.tag = Tag::#elem_name_ident;
                     #exprs_quote
                 }
                 _ => panic!("cannot use as_tag with Text or empty nodes")
             }
-
-            #affected_node_ident
+            new_node 
     });
 
    exp.into()
@@ -1792,6 +2246,8 @@ pub fn as_tag(input: TokenStream) -> TokenStream {
 
 
 struct ProcessSubMacroPartArray{
+    
+    name : syn::Ident,
     parts: Vec<ProcessSubMacroPart>,
 }
 
@@ -1813,8 +2269,33 @@ struct ProcessSubMacroPartNeither {
 
 impl Parse for ProcessSubMacroPartArray {
     fn parse(input: ParseStream) -> Result<Self> {
-        let expr_array :ExprArray = input.parse()?;
-        let mut vec_of_processed_parts  = vec![];
+           let args :ExprArray = input.parse()?;
+
+           let mut iter_for_args = args.elems.iter();
+           
+           
+           let macro_name_expr = iter_for_args.next().cloned().expect("macro_name_expr to exist");
+           
+           
+           let expr = iter_for_args.next().cloned().expect("expression to exist");
+           
+   
+           let main_macro_name_ident = match macro_name_expr {
+               Expr::Path(path) => {
+                    path.path.get_ident().expect("MainViewMacroName to exist").clone()
+               }
+               _ => {panic!("canwewnot determine main macro name")}
+           };
+   
+       
+           // The main expression can be an assign, a macro, or something else
+           // if its an assign macro we construct a struct that enables optional arguments to be set
+           // if its a macro we construct a struct that enables the correct macro to be called
+           // if its something else we allow update the root element.
+   
+           if let  Expr::Array(expr_array) = expr {
+               let mut vec_of_processed_parts  = vec![];
+   
         for expr in expr_array.elems {
             match expr {  
 
@@ -1844,15 +2325,22 @@ impl Parse for ProcessSubMacroPartArray {
             }
             
             Ok(ProcessSubMacroPartArray{
+                name: main_macro_name_ident,
                 parts: vec_of_processed_parts,
             })
     
+} else {
+    panic!{"should never get here"};
+
+}
 }
 }
 
 #[proc_macro]
-pub fn process_submacro_part(input: TokenStream) -> TokenStream {
+pub fn process_submacro_part_a_vec(input: TokenStream) -> TokenStream {
     let processed_part_array = parse_macro_input!(input as ProcessSubMacroPartArray);
+    let name =processed_part_array.name;
+    let node_name = format_ident!("Node{}", name.to_string().to_camel_case());
     let mut combined_quote = quote!();
 
       for part in processed_part_array.parts {    
@@ -1861,7 +2349,7 @@ pub fn process_submacro_part(input: TokenStream) -> TokenStream {
                 let left_ident = assign.left_ident;
                 let expr = assign.right;
                 let exp = quote!(
-                    builder.args.#left_ident = #expr;
+                    argument_struct.#left_ident = #expr;
                 );
                 combined_quote = quote!(
                     #combined_quote
@@ -1882,5 +2370,195 @@ pub fn process_submacro_part(input: TokenStream) -> TokenStream {
 }
     quote!({
         #combined_quote
+        #node_name(Node::Element(eld))
+    }).into()
+}
+
+#[proc_macro]
+pub fn process_submacro_part_optional(input: TokenStream) -> TokenStream {
+    let processed_part_array = parse_macro_input!(input as ProcessSubMacroPartArray);
+    let name =processed_part_array.name;
+    let node_name = format_ident!("Node{}", name.to_string().to_camel_case());
+    let mut combined_quote = quote!();
+
+      for part in processed_part_array.parts {    
+        match part {
+            ProcessSubMacroPart::Assign(assign) => {
+                let left_ident = assign.left_ident;
+                let expr = assign.right;
+                let exp = quote!(
+                    argument_struct.#left_ident = #expr;
+                );
+                combined_quote = quote!(
+                    #combined_quote
+                    #exp
+                )
+            }
+            ProcessSubMacroPart::Neither(ProcessSubMacroPartNeither{expr}) => {   
+                let exp = quote!(
+                    #expr.update_el( &mut eld);
+                );
+
+                combined_quote = quote!(
+                    #combined_quote
+                    #exp
+                )
+            }
+    }
+}
+    quote!({
+        #combined_quote
+        #node_name(Node::Element(eld))
+    }).into()
+}
+
+
+#[proc_macro]
+pub fn process_submacro_part_has_args(input: TokenStream) -> TokenStream {
+    let processed_part_array = parse_macro_input!(input as ProcessSubMacroPartArray);
+    let name =processed_part_array.name;
+    let node_name = format_ident!("Node{}", name.to_string().to_camel_case());
+
+    let mut combined_quote = quote!();
+
+      for part in processed_part_array.parts {    
+        match part {
+            ProcessSubMacroPart::Assign(assign) => {
+                let left_ident = assign.left_ident;
+                let expr = assign.right;
+                let exp = quote!(
+                    argument_struct.#left_ident = #expr;
+                );
+                combined_quote = quote!(
+                    #combined_quote
+                    #exp
+                )
+            }
+            ProcessSubMacroPart::Neither(ProcessSubMacroPartNeither{expr}) => {   
+                let exp = quote!(
+                    #expr.update_el( &mut eld);
+                );
+
+                combined_quote = quote!(
+                    #combined_quote
+                    #exp
+                )
+            }
+    }
+}
+    quote!({
+        #combined_quote
+        #node_name(( Node::Element(eld) , argument_struct))
+    }).into()
+}
+
+
+#[proc_macro]
+pub fn process_submacro_part_optional_has_args(input: TokenStream) -> TokenStream {
+    let processed_part_array = parse_macro_input!(input as ProcessSubMacroPartArray);
+    let name =processed_part_array.name;
+    let node_name = format_ident!("Node{}", name.to_string().to_camel_case());
+    let mut combined_quote = quote!();
+
+      for part in processed_part_array.parts {    
+        match part {
+            ProcessSubMacroPart::Assign(assign) => {
+                let left_ident = assign.left_ident;
+                let expr = assign.right;
+                let exp = quote!(
+                    argument_struct.#left_ident = #expr;
+                );
+                combined_quote = quote!(
+                    #combined_quote
+                    #exp
+                )
+            }
+            ProcessSubMacroPart::Neither(ProcessSubMacroPartNeither{expr}) => {   
+                let exp = quote!(
+                    #expr.update_el( &mut eld);
+                );
+
+                combined_quote = quote!(
+                    #combined_quote
+                    #exp
+                )
+            }
+    }
+}
+    quote!({
+        #combined_quote
+        #node_name(( Node::Element(eld) , argument_struct))
+    }).into()
+}
+
+
+#[proc_macro]
+pub fn process_submacro_part_a_vec_has_args(input: TokenStream) -> TokenStream {
+    let processed_part_array = parse_macro_input!(input as ProcessSubMacroPartArray);
+    let name =processed_part_array.name;
+    let node_name = format_ident!("Node{}", name.to_string().to_camel_case());
+    let mut combined_quote = quote!();
+
+      for part in processed_part_array.parts {    
+        match part {
+            ProcessSubMacroPart::Assign(assign) => {
+                let left_ident = assign.left_ident;
+                let expr = assign.right;
+                let exp = quote!(
+                    argument_struct.#left_ident = #expr;
+                );
+                combined_quote = quote!(
+                    #combined_quote
+                    #exp
+                )
+            }
+            ProcessSubMacroPart::Neither(ProcessSubMacroPartNeither{expr}) => {   
+                let exp = quote!(
+                    #expr.update_el( &mut eld);
+                );
+
+                combined_quote = quote!(
+                    #combined_quote
+                    #exp
+                )
+            }
+    }
+}
+    quote!({
+        #combined_quote
+        #node_name(( Node::Element(eld) , argument_struct))
+    }).into()
+}
+
+
+#[proc_macro]
+pub fn process_submacro_part(input: TokenStream) -> TokenStream {
+    let processed_part_array = parse_macro_input!(input as ProcessSubMacroPartArray);
+
+    let name = processed_part_array.name;
+    let node_name = format_ident!("Node{}", name.to_string().to_camel_case());
+    let mut combined_quote = quote!();
+
+      for part in processed_part_array.parts {    
+        match part {
+            ProcessSubMacroPart::Neither(ProcessSubMacroPartNeither{expr}) => {   
+                
+                let exp = quote!(
+                    #expr.update_el( &mut eld);
+                );
+
+                combined_quote = quote!(
+                    #combined_quote
+                    #exp
+                );
+                
+            }
+            
+            _exp=>panic!("Shoudl never get an assign ")
+    }
+}
+    quote!({
+        #combined_quote
+        #node_name(Node::Element(eld))
     }).into()
 }
