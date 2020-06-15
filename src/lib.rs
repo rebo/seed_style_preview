@@ -58,6 +58,8 @@ pub use style::{
     UpdateStyle,
 };
 
+pub use illicit;
+
 // pub trait UpdateView<B,Ms> {
 //     fn update_view(self, builder: &mut B);
 // }
