@@ -821,8 +821,8 @@ pub enum Pseudo {
     Target,
     Valid,
     Visited,
-    Before(String),
-    After(String),
+    Before,
+    After,
 }
 
 impl Pseudo {
@@ -854,8 +854,8 @@ impl Pseudo {
             Pseudo::Target => ":target".to_string(),
             Pseudo::Valid => ":valid".to_string(),
             Pseudo::Visited => ":visited".to_string(),
-            Pseudo::Before(before) => format!(":before({})", before),
-            Pseudo::After(after) => format!(":after({})", after),
+            Pseudo::Before  => "::before".to_string(),
+            Pseudo::After => "::after".to_string(),
             Pseudo::Lang(val) => format!(":lang({})", val),
             Pseudo::Not(val) => format!(":not({})", val),
             Pseudo::NthChild(val) => format!(":nth-child({})", val),
