@@ -338,7 +338,8 @@ pub fn expand_pseudo(input: TokenStream) -> TokenStream {
                 #func_impls_defn
                 )*
 
-                
+                fn pseudo( self, val: &str)  -> Style ;
+
                 fn lang( self, val: &str)  -> Style ;
 
                 fn not( self, val: &str)  -> Style ;
@@ -381,7 +382,13 @@ pub fn expand_pseudo(input: TokenStream) -> TokenStream {
 
             impl PseudoTrait for Style {
                 #(#func_impls)*
+   
+                fn pseudo(mut self, val: &str)  -> Style {
+                    self.updated_at.push(format!("{}", Location::caller()));
+                    self.pseudo = Pseudo::Custom(val.to_string());
 
+                    self
+                }
                 
                 fn lang(mut self, val: &str)  -> Style {
                     self.updated_at.push(format!("{}", Location::caller()));

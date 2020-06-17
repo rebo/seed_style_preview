@@ -823,6 +823,7 @@ pub enum Pseudo {
     Visited,
     Before,
     After,
+    Custom(String),
 }
 
 impl Pseudo {
@@ -862,6 +863,7 @@ impl Pseudo {
             Pseudo::NthLastChild(val) => format!(":nth-last-chid({})", val),
             Pseudo::NthLastOfType(val) => format!(":nth-last-of-type({})", val),
             Pseudo::NthOfType(val) => format!(":nth-of-type({})", val),
+            Pseudo::Custom(val) => format!("{}", val),
         }
     }
 }
