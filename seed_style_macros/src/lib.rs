@@ -648,9 +648,10 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         {
                             fn call<'a, It>(&self, mut it:  It) -> Option<#specific_ident>
                             where
-                                It: Iterator<Item = &'a Theme>,
+                                It: DoubleEndedIterator<Item = &'a Theme>,
                             {
-                                it.find_map(|theme| theme.get::<T, #generic_ident>(self.0.clone())).map(|v| v.into())
+                                // log!(self.0.clone()); // print theme key if needed for debug
+                                it.rev().find_map(|theme| theme.get::<T, #generic_ident>(self.0.clone())).map(|v| v.into())
                             }
                         }
 
@@ -660,15 +661,15 @@ pub fn generate_froms(input: TokenStream) -> self::proc_macro::TokenStream {
                         {
                             fn call<'a, It>(&self, mut it:  It) -> Option<#specific_ident>
                             where
-                                It: Iterator<Item = &'a Theme>,
+                                It: DoubleEndedIterator<Item = &'a Theme>,
                             {
-                                it.find_map( |theme| theme.#theme_scale_ident.get(self.0.clone())).cloned().map(|v| v.into())
+                                it.rev().find_map( |theme| theme.#theme_scale_ident.get(self.0.clone())).cloned().map(|v| v.into())
                             }
                         }
 
                             impl <T> From<T> for #specific_ident where T:#themeid_ident + 'static{
                                 fn from(v: T) -> Self {
-                                    with_themes( #struct_type(v)).unwrap()
+                                    with_themes( #struct_type(v)).expect("chchhh")
                                 }
                             }
 
@@ -1430,7 +1431,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
     for input in &mut input_iter {
         let arg_name = format_ident!("{}",get_arg_name(input));
         let qualified_arg_name = format_ident!("{}_{}", view_ident ,get_arg_name(input));
-        let arg_name_long = format_ident!( "{}_{}_{}",  view_ident ,get_arg_name(input), location );
+        // let arg_name_long = format_ident!( "{}_{}_{}",  view_ident ,get_arg_name(input), location );
 
         use_shortcuts = quote!(
             #use_shortcuts
@@ -1881,7 +1882,7 @@ struct ProcessPartArray{
 
 
 enum ProcessPart {
-    Macro(ProcessPartMacro),
+
     Assign(ProcessPartAssign),
     Neither(ProcessPartNeither),
 }
@@ -1889,12 +1890,6 @@ enum ProcessPart {
 struct ProcessPartAssign{
     left_ident: syn::Ident,
     right: Box<Expr>,
-}
-
-struct ProcessPartMacro {
-    main_name_ident: syn::Ident,
-    ident: syn::Ident,
-    tokens: TokenStream,
 }
 
 struct ProcessPartNeither {
@@ -1916,7 +1911,7 @@ impl Parse for ProcessPartArray {
         let macro_name_expr = iter_for_args.next().cloned().expect("macro_name_expr to exist");
         
         // all_args and optional_args are needed when processing a macro expression.
-        let all_args = iter_for_args.next().cloned().expect("This ExprArray should exist");
+        let _all_args = iter_for_args.next().cloned().expect("This ExprArray should exist");
         
 
         let expr = iter_for_args.next().cloned().expect("expression to exist");
@@ -2035,41 +2030,7 @@ pub fn process_part(input: TokenStream) -> TokenStream {
     for part in processed_part_array.parts {    
         match part {
     
-        ProcessPart::Macro(m) => {
-            
-            let global_macro_ident = format_ident!("{}", m.ident);
-            let tokens: proc_macro2::TokenStream = m.tokens.into();
-            let view_builder = format_ident!("{}Builder",  m.main_name_ident.to_string().to_camel_case());
-    
-            combined_quote = quote!(
-                
-                #combined_quote
-                let empty = empty![];
-                let mut root_backup = std::mem::replace(&mut builder.root, empty);
-
-                let empty_builder = #view_builder::<_>::default_empty();
-                let backedup_builder = std::mem::replace(&mut builder, empty_builder);
-
-                let sa_builder = use_state(||backedup_builder);
-                
-                illicit::child_env!(StateAccess<#view_builder<_>> => sa_builder).enter(|| {
-                    
-                match &mut root_backup {
-                    seed::virtual_dom::Node::Element(ref mut ela) => {
-                    let nodes = #global_macro_ident![#tokens];
-                    nodes.update_el(ela);
-                    }
-                    _ => {panic!("huh")}
-                }
-
-                });
-
-                builder = sa_builder.remove().unwrap();
-                let _ = std::mem::replace(&mut builder.root, root_backup);
-                
-            );
-    
-        }
+       
         ProcessPart::Assign(assign) => {
         let left_ident = assign.left_ident;
         let expr = assign.right;

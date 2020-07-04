@@ -138,11 +138,11 @@ where
 struct ReturnBpScale;
 
 impl ActOnIteratorOfThemes<Option<Vec<CssMedia>>> for ReturnBpScale {
-    fn call<'a, It>(&self, mut it: It) -> Option<Vec<CssMedia>>
+    fn call<'a, It>(&self,  it: It) -> Option<Vec<CssMedia>>
     where
-        It: Iterator<Item = &'a Theme>,
+        It: DoubleEndedIterator<Item = &'a Theme>,
     {
-        it.find_map(|theme| {
+        it.rev().find_map(|theme| {
             if !theme.media_bp_scale.is_empty() {
                 Some(theme.media_bp_scale.clone())
             } else {
@@ -730,11 +730,11 @@ impl<T> ActOnIteratorOfThemes<Option<Style>> for ReturnSpecificStyleFromStyleThe
 where
     T: StyleTheme + 'static,
 {
-    fn call<'a, It>(&self, mut it: It) -> Option<Style>
+    fn call<'a, It>(&self,  it: It) -> Option<Style>
     where
-        It: Iterator<Item = &'a Theme>,
+        It: DoubleEndedIterator<Item = &'a Theme>,
     {
-        it.find_map(|theme| theme.get::<T, Style>(self.0.clone()))
+        it.rev().find_map(|theme| theme.get::<T, Style>(self.0.clone()))
     }
 }
 
@@ -746,11 +746,11 @@ impl<T> ActOnIteratorOfThemes<(u32, Option<u32>)> for ReturnBpTuple<T>
 where
     T: BreakpointTheme + 'static,
 {
-    fn call<'a, It>(&self, mut it: It) -> (u32, Option<u32>)
+    fn call<'a, It>(&self,  it: It) -> (u32, Option<u32>)
     where
-        It: Iterator<Item = &'a Theme>,
+        It: DoubleEndedIterator<Item = &'a Theme>,
     {
-        it.find_map(|theme| theme.get::<T, (u32, Option<u32>)>(self.0.clone()))
+        it.rev().find_map(|theme| theme.get::<T, (u32, Option<u32>)>(self.0.clone()))
             .unwrap()
     }
 }
@@ -1601,6 +1601,10 @@ pub struct GlobalStyle {
 }
 
 impl GlobalStyle {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn style(mut self, selector: &str, style: Style) -> GlobalStyle {
         if selector == "html" {
             panic!("Sorry for now , You can only set html style directly in css.")

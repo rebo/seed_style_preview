@@ -32,64 +32,15 @@ thread_local! {
     static THEMES_VEC : RefCell<Vec<Theme>> = RefCell::new(vec![]);
 }
 
-#[topo::nested]
-pub fn use_themes<T, F, Q, R>(themes: T, content: F) -> R
-where
-    F: FnOnce() -> R,
-    T: FnOnce() -> Q,
-    Q: Into<Vec<Theme>>,
-{
-    let inner_themes = use_state(|| {
-        // We need access to the global themes
-        THEMES_VEC.with(|global_vt| {
-            let mut new_inner_themes = themes().into();
-            let mut new_inner_theme_idxs =
-                if let Some(outer_themes_access) = illicit::Env::get::<StateAccess<Vec<usize>>>() {
-                    let outer = outer_themes_access.get(); // cloning because we need it
-                    new_inner_themes.retain(|inner| {
-                        outer
-                            .iter()
-                            .find(|idx| {
-                                THEMES_VEC
-                                    .with(|global_vt| global_vt.borrow()[**idx].name == inner.name)
-                            })
-                            .is_none()
-                    });
-                    outer
-                } else {
-                    vec![]
-                };
-            let global_len = global_vt.borrow().len();
-            for idx in global_len..new_inner_themes.len() + global_len {
-                new_inner_theme_idxs.push(idx);
-            }
-
-            for theme in new_inner_themes.drain(..) {
-                if !global_vt.borrow().iter().any(|t| t.name == theme.name) {
-                    global_vt.borrow_mut().push(theme);
-                }
-            }
-
-            new_inner_theme_idxs
-        })
-    });
-
-    // no need to run in new illicit context if theme idx already in current context exists.
-    if inner_themes.get_with(|v_t| v_t.len()) > 0 {
-        illicit::child_env!(  StateAccess<Vec<usize>>  => inner_themes ).enter(content)
-    } else {
-        content()
-    }
-}
 
 pub fn change_theme_with_name(name: &str, theme: Theme) {
-    THEMES_VEC.with(|global_vt| {
-        if let Some(existing_theme) = global_vt.borrow_mut().iter_mut().find(|t| &t.name == name) {
+    app_themes().update( |v|
+        if let Some(existing_theme) = v.iter_mut().find(|t| &t.name == name) {
             let _old_theme = std::mem::replace(existing_theme, theme);
         } else {
             panic!("old theme doesnt exist");
         }
-    });
+    )
 }
 
 impl From<CssSize> for CssWidth {
@@ -1489,27 +1440,49 @@ where
 pub trait ActOnIteratorOfThemes<R> {
     fn call<'a, It>(&self, it: It) -> R
     where
-        It: Iterator<Item = &'a Theme>;
+        It: DoubleEndedIterator<Item = &'a Theme>;
+}
+
+// pub fn with_themes<Q, R>(with: Q) -> R
+// where
+//     Q: ActOnIteratorOfThemes<R>,
+// {
+//     if let Some(themes_idxs) = illicit::Env::get::<StateAccess<Vec<usize>>>() {
+//         themes_idxs.get_with(|theme_idxs| {
+//             THEMES_VEC.with(|global_v_t| {
+//                 with.call(global_v_t.borrow().iter().enumerate().filter_map(|(x, b)| {
+//                     if theme_idxs.contains(&x) {
+//                         Some(b)
+//                     } else {
+//                         None
+//                     }
+//                 }))
+//             })
+//         })
+//     } else {
+//         with.call(std::iter::empty::<&Theme>())
+//     }
+// }
+
+
+#[atom]
+pub fn app_themes() -> Vec<Theme> {
+    vec![]
 }
 
 pub fn with_themes<Q, R>(with: Q) -> R
 where
     Q: ActOnIteratorOfThemes<R>,
 {
-    if let Some(themes_idxs) = illicit::Env::get::<StateAccess<Vec<usize>>>() {
-        themes_idxs.get_with(|theme_idxs| {
-            THEMES_VEC.with(|global_v_t| {
-                with.call(global_v_t.borrow().iter().enumerate().filter_map(|(x, b)| {
-                    if theme_idxs.contains(&x) {
-                        Some(b)
-                    } else {
-                        None
-                    }
-                }))
-            })
-        })
-    } else {
-        with.call(std::iter::empty::<&Theme>())
+    app_themes().observe_with (|v|    
+        with.call(v.iter())
+    )
+}
+
+
+pub fn load_app_themes(themes:&[fn()->Theme]) {
+    for theme in themes {
+        app_themes().update(|t| t.push(theme()))
     }
 }
 
@@ -1563,6 +1536,10 @@ impl Default for Theme {
 pub trait OverloadedStyleLookUp<T, R> {
     fn overloaded_lookup(&self, alias: T) -> Option<R>;
 }
+
+// fn th_color<T,R>(alias:T) -> Option<CssColor> where T: 'static + ColorTheme + Clone,{
+//     observe_with(my_theme(), |t| t.get(alias))
+// }
 
 impl<Q: 'static + SizeTheme> OverloadedStyleLookUp<Q, CssSize> for Theme {
     fn overloaded_lookup(&self, alias: Q) -> Option<CssSize> {
@@ -1802,6 +1779,8 @@ impl Theme {
     {
         self.overloaded_general_lookup(alias)
     }
+
+    
 
     pub fn get<T, R>(&self, alias: T) -> Option<R>
     where
@@ -2064,23 +2043,9 @@ where
 {
     fn call<'a, It>(&self, mut it: It) -> Style
     where
-        It: Iterator<Item = &'a Theme>,
+        It: DoubleEndedIterator<Item = &'a Theme>,
     {
         it.find_map(|theme| theme.get::<T, Style>(self.0.clone()))
-            .unwrap()
+            .expect("Cannot find a theme that defines that CSS Value, are you sure you have provided access to that theme using `use_themes(|| THEME_NAME, ||..`")
     }
 }
-
-// impl<T> From<T> for CssMedia
-// where
-//     T: StyleTheme + 'static,
-// {
-//     fn from(v: T) -> Self {
-//         with_themes(|borrowed_themes| {
-//             borrowed_themes
-//                 .iter()
-//                 .find_map(|theme| theme.get::<T, CssMedia>(v.clone()))
-//                 .unwrap_or_default()
-//         })
-//     }
-// }

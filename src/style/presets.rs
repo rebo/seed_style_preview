@@ -1,7 +1,7 @@
 use super::theme::*;
 use super::*;
 
-pub fn style_presets() -> Theme {
+pub fn default_colors_theme() -> Theme {
     Theme::default()
         .set_color(seed_colors::Base::Black, CssColor::Hex(0x000000))
         .set_color(seed_colors::Base::White, CssColor::Hex(0xFFFFFF))

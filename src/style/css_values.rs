@@ -1,7 +1,7 @@
 use super::measures::*;
 use crate::style::{CssValueTrait, Style, UpdateStyle};
 use derive_more::Display;
-use seed::{prelude::*, *};
+
 use seed_style_macros::{create_enums, CssStyleMacro};
 use std::panic::Location;
 #[derive(Display, Clone, Debug, CssStyleMacro)]

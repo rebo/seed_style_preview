@@ -22,7 +22,7 @@ macro_rules! with_dollar_sign {
 pub use style::{
     PseudoTrait,
     // exports for Seed Layout
-    composition::{default_bp_theme, Composition, SeedBreakpoint, WithLayoutComposition},
+    composition::{default_breakpoint_theme, Composition, SeedBreakpoint, WithLayoutComposition},
     //ro col layout
     row_col_layout::{Row, *, Column, RowBuilder, ColumnBuilder, RowColumnArgs, RowItemArgs, ColumnItemArgs,},
 
@@ -34,9 +34,10 @@ pub use style::{
     // measures
     measures::{cm, em, hsl, pc, px, rem, rgb, rgba, vh, vw, ExactLength},
     // presets
-    presets::{seed_colors, style_presets},
+    presets::{seed_colors, default_colors_theme},
     theme::change_theme_with_name,
-    theme::use_themes,
+    
+    theme::{app_themes, load_app_themes},
     // themes
     theme::Theme,
     // themes, conditional rendering
