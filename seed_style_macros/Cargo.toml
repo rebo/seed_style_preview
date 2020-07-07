@@ -30,5 +30,7 @@ eager = "0.1.0"
 seed = { git = "https://github.com/seed-rs/seed", rev = "0a538f0" }
 darling = "0.10.2"
 illicit = "0.9.2"
-seed_hooks = {path = "../../seed_hooks"}
+
+seed_hooks = { git = "https://github.com/rebo/seed_hooks", rev = "d7bdf6c" }
+# seed_hooks = {path = "../../seed_hooks"}
 # seed_hooks = "0.1.3"
