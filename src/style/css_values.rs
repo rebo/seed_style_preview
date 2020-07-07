@@ -2333,6 +2333,8 @@ pub enum CssJustifyContent {
     FlexEnd,
     #[display(fmt = "baseline")]
     Baseline,
+    #[display(fmt = "space-between")]
+    SpaceBetween,
     #[display(fmt = "initial")]
     Initial,
     #[display(fmt = "inherit")]
