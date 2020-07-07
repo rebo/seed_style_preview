@@ -66,6 +66,34 @@ pub fn hsl<H: Into<f64>,S: Into<f64>,L: Into<f64>>(h: H, s: S, l: L) -> CssColor
     CssColor::Hsl(h, s, l)
 }
 
+
+pub fn hsla<H: Into<f64>,S: Into<f64>,L: Into<f64>, A:Into<f64>>(h: H, s: S, l: L, a:A) -> CssColor {
+    let h = h.into();
+    let s = s.into();
+    let l = l.into();
+    let a = a.into();
+    CssColor::Hsla(h, s, l, a)
+}
+
+pub fn hsluva<H: Into<f64>,S: Into<f64>,L: Into<f64>, A:Into<f64>>(h: H, s: S, l: L, a:A) -> CssColor {
+    let h = h.into();
+    let s = s.into();
+    let l = l.into();
+    let a = a.into();
+    let rgb = hsluv::hsluv_to_rgb((h,s,l));
+    CssColor::Rgba(rgb.0*255., rgb.1*255., rgb.2*255., a)
+}
+
+
+pub fn hsluv<H: Into<f64>,S: Into<f64>,L: Into<f64>>(h: H, s: S, l: L) -> CssColor {
+    let h = h.into();
+    let s = s.into();
+    let l = l.into();
+    let rgb = hsluv::hsluv_to_rgb((h,s,l));
+    CssColor::Rgba(rgb.0*255., rgb.1*255., rgb.2*255., 1.0)
+}
+
+
 pub fn rgb<R: Into<f64>,G: Into<f64>,B: Into<f64>>(r: R, g: G, b: B) -> CssColor {
     let r = r.into();
     let g = g.into();

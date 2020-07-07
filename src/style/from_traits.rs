@@ -410,3 +410,13 @@ impl From<Percent> for CssLineHeight {
         CssLineHeight::Percentage(pc)
     }
 }
+
+trait ToHexColor<Q> where Q:std::fmt::LowerHex{
+    fn to_hex_color(self) ->  String;
+}
+
+impl <Q>ToHexColor<Q> for Q where Q:std::fmt::LowerHex{
+    fn to_hex_color(self) -> String{
+        format!("#{:06x}",self)
+    }
+}

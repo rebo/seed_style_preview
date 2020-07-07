@@ -32,7 +32,7 @@ pub use style::{
     helpers::conditionally_skip_rendering,
     layout::{Layout, LayoutArea, NoArea, WithGridLayout},
     // measures
-    measures::{cm, em, hsl, pc, px, rem, rgb, rgba, vh, vw, ExactLength},
+    measures::{cm, em, hsl, hsla,hsluv, hsluva, pc, px, rem, rgb, rgba, vh, vw, ExactLength},
     // presets
     presets::{seed_colors, default_colors_theme},
     theme::change_theme_with_name,

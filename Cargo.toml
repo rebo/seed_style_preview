@@ -22,6 +22,7 @@ seed = "0.7.0"
 seed_hooks = "0.1.4"
 objekt-clonable = "0.2.2"
 eager = "0.1.0"
+rust-hsluv = "0.1.4"
 
 # slotmap = "0.4.0"
 

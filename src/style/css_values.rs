@@ -1812,6 +1812,8 @@ pub enum CssColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), 
     #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
@@ -1826,7 +1828,8 @@ pub enum CssStroke {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -1841,7 +1844,8 @@ pub enum CssBackgroundColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -1855,7 +1859,8 @@ pub enum CssFill {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -1870,7 +1875,8 @@ pub enum CssBorderColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -1885,7 +1891,8 @@ pub enum CssBorderLeftColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -1900,6 +1907,8 @@ pub enum CssBorderRightColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "{} {} {}", _0, _1, _2)]
     Hsl(f64, f64, f64),
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), 
     #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
@@ -1915,7 +1924,8 @@ pub enum CssBorderTopColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -1930,7 +1940,8 @@ pub enum CssBorderBottomColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -1944,7 +1955,8 @@ pub enum CssOutlineColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -1958,7 +1970,8 @@ pub enum CssOutlineLeftColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -1972,7 +1985,8 @@ pub enum CssOutlineRightColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -1986,7 +2000,8 @@ pub enum CssOutlineTopColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]
@@ -2000,7 +2015,8 @@ pub enum CssOutlineBottomColor {
     Rgba(f64, f64, f64, f64),
     #[display(fmt = "hsl({},{}%,{}%)", _0, _1, _2)]
     Hsl(f64, f64, f64),
-    #[display(fmt = "#{:06x}", _0)]
+    #[display(fmt = "hsla({},{}%,{}%,{})", _0, _1, _2, _3)]
+    Hsla(f64, f64, f64, f64), #[display(fmt = "#{:06x}", _0)]
     Hex(i32),
     StringValue(String),
     #[display(fmt = "inherit")]

@@ -607,6 +607,7 @@ impl From<CssColor> for CssBackgroundColor {
         match val {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::Hex(h) => Self::Hex(h),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
@@ -619,6 +620,7 @@ impl From<CssColor> for CssFill {
         match val {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::Hex(h) => Self::Hex(h),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
@@ -631,6 +633,7 @@ impl From<CssColor> for CssStroke {
         match val {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::Hex(h) => Self::Hex(h),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
@@ -644,6 +647,7 @@ impl From<CssColor> for CssBorderColor {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
             CssColor::Hex(h) => Self::Hex(h),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
         }
@@ -656,6 +660,7 @@ impl From<CssColor> for CssBorderLeftColor {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
             CssColor::Hex(h) => Self::Hex(h),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
         }
@@ -668,6 +673,7 @@ impl From<CssColor> for CssBorderRightColor {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
             CssColor::Hex(h) => Self::Hex(h),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
         }
@@ -680,6 +686,7 @@ impl From<CssColor> for CssBorderBottomColor {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
             CssColor::Hex(h) => Self::Hex(h),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
         }
@@ -692,6 +699,7 @@ impl From<CssColor> for CssBorderTopColor {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
             CssColor::Hex(h) => Self::Hex(h),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
         }
@@ -704,6 +712,7 @@ impl From<CssColor> for CssOutlineColor {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
             CssColor::Hex(h) => Self::Hex(h),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
         }
@@ -716,6 +725,7 @@ impl From<CssColor> for CssOutlineLeftColor {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
             CssColor::Hex(h) => Self::Hex(h),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
         }
@@ -728,6 +738,7 @@ impl From<CssColor> for CssOutlineRightColor {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
             CssColor::Hex(h) => Self::Hex(h),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
         }
@@ -740,6 +751,7 @@ impl From<CssColor> for CssOutlineBottomColor {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
             CssColor::Hex(h) => Self::Hex(h),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
         }
@@ -752,6 +764,7 @@ impl From<CssColor> for CssOutlineTopColor {
             CssColor::Rgba(r, g, b, a) => Self::Rgba(r, g, b, a),
             CssColor::Hsl(h, s, l) => Self::Hsl(h, s, l),
             CssColor::Hex(h) => Self::Hex(h),
+            CssColor::Hsla(h, s, l, a) => Self::Hsla(h, s, l, a),
             CssColor::StringValue(val) => Self::StringValue(val),
             CssColor::Inherit => Self::Inherit,
         }
