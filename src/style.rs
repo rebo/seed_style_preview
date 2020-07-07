@@ -59,6 +59,8 @@ pub trait CssValueTrait: std::fmt::Display + Clone + Sync + Send + std::fmt::Deb
     fn prefixes(&self) -> Option<Vec<String>> {
         None
     }
+
+    fn value_only(&self) -> String;
 }
 
 #[derive(Clone, Debug)]

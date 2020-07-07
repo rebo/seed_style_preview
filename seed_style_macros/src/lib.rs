@@ -137,13 +137,21 @@ pub fn expand(input: TokenStream) -> TokenStream {
         outer_vendor_prefixes_quote = quote! {
               fn prefixes(&self) -> Option<Vec<String>>{
                   #inner_vendor_prefixes_quote
-            }
+             }
+             
 
         };
     }
+    let css_property_name = format!("{}:",snake_case_type_ident.to_string().to_kebab_case());
 
     let update_style_quote = quote! {
-        impl CssValueTrait for #css_type_name{#outer_vendor_prefixes_quote}
+        impl CssValueTrait for #css_type_name{
+            #outer_vendor_prefixes_quote
+
+            fn value_only(&self) -> String {
+                self.to_string().trim_start_matches(#css_property_name).trim_end_matches(";").to_string()
+            }
+        }
 
 
     impl From<&str> for #css_type_name where {
@@ -194,7 +202,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
                     quote! {
                         fn #f_small_name_ident(self) -> Style;
                         fn #short_prop_ident(self) -> Style;
-
+                    
                     }
                 } else {
                     quote! {
@@ -208,6 +216,8 @@ pub fn expand(input: TokenStream) -> TokenStream {
                 #(
                 #func_impls_defn
                 )*
+
+                
 
                 #base_defn_quote
 
@@ -272,7 +282,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
             impl #trait_name_ident for Style {
                 #(#func_impls)*
                 #base_impl_quote
-
+            
             }
         };
 
