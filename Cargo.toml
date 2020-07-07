@@ -18,8 +18,9 @@ wasm-bindgen = "^0.2.62"
 ordered-float = "1.0.2"
 anymap = "0.12.1"
 derive_more = "0.99.5"
-seed = "0.7.0"
-seed_hooks = "0.1.4"
+seed = { git = "https://github.com/seed-rs/seed", rev = "0a538f0" }
+# seed_hooks = "0.1.4"
+seed_hooks = {path = "../seed_hooks"}
 objekt-clonable = "0.2.2"
 eager = "0.1.0"
 rust-hsluv = "0.1.4"
