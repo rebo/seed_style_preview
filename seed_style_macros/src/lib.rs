@@ -1674,6 +1674,14 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
                          }
                     }
                 }
+
+                impl<Ms, T: LocalUpdateEl<Ms>, I: Iterator<Item = T>> LocalUpdateElForIterator<Ms> for I {
+                    fn update_el(self, el: &mut El<Ms>) {
+                        for item in self {
+                            item.update_el(el);
+                        }
+                    }
+                }
             
             }},
             (false,true,false) =>  quote! {

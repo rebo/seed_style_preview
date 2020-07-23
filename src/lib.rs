@@ -52,8 +52,8 @@ pub use style::{
     // global style api
     GlobalStyle,
     // extension trait to allow Style structs to be update_el processed by seed.
-    LocalUpdateEl,
-    // Style struct, technically user shouldn't really need to access this directly
+    LocalUpdateEl,LocalUpdateElForIterator,
+    // Style struct,  technically user shouldn't really need to access this directly
     Style,
     // style property argument trait
     UpdateStyle,

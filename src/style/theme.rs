@@ -1479,7 +1479,7 @@ pub trait ActOnIteratorOfThemes<R> {
 
 
 #[atom]
-pub fn app_themes() -> Vec<Theme> {
+pub fn app_themes() -> Atom<Vec<Theme>> {
     vec![]
 }
 

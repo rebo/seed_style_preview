@@ -1282,6 +1282,11 @@ fn add_global_init_css_to_head(
 //     STYLES_USED.with(|css_set_ref| css_set_ref.borrow_mut().insert(variant_hash));
 // }
 
+pub trait LocalUpdateElForIterator<Ms> {
+    fn update_el(self, el: &mut El<Ms>);
+}
+
+
 pub trait LocalUpdateEl<T> {
     fn update_el(self, el: &mut T);
 }
