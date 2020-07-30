@@ -2445,8 +2445,6 @@ pub enum CssDisplay {
     Flex,
     #[display(fmt = "grid")]
     Grid,
-    #[display(fmt = "hidden")]
-    Hidden,
     #[display(fmt = "inline-block")]
     InlineBlock,
     #[display(fmt = "inline=flex")]
