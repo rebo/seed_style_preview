@@ -1460,7 +1460,7 @@ pub trait ActOnIteratorOfThemes<R> {
 // where
 //     Q: ActOnIteratorOfThemes<R>,
 // {
-//     if let Some(themes_idxs) = illicit::Env::get::<StateAccess<Vec<usize>>>() {
+//     if let Some(themes_idxs) = illicit::get::<StateAccess<Vec<usize>>>() {
 //         themes_idxs.get_with(|theme_idxs| {
 //             THEMES_VEC.with(|global_v_t| {
 //                 with.call(global_v_t.borrow().iter().enumerate().filter_map(|(x, b)| {

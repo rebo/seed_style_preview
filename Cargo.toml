@@ -10,7 +10,6 @@ license = "Apache-2.0 OR MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-illicit = "0.9.2"
 harsh = "0.1.6"
 seed_style_macros = {git = "https://github.com/rebo/seed_style_preview"}
 # seed_style_macros = {path="./seed_style_macros"}

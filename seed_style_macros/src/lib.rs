@@ -1637,7 +1637,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
                         // we dont really need _el
                         
 
-                         if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                         if let Ok(sa) = illicit::get::<StateAccess<#view_builder<T>>>() {
                             sa.update(|builder| builder.#builder_field_name = self.0);
                          }
                     }
@@ -1669,7 +1669,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
                         // we dont really need _el
                         
 
-                         if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                         if let Ok(sa) = illicit::get::<StateAccess<#view_builder<T>>>() {
                             sa.update(|builder| builder.#builder_field_name = self.0);
                          }
                     }
@@ -1703,7 +1703,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
                             // we dont really need _el
                             
     
-                             if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                             if let Ok(sa) = illicit::get::<StateAccess<#view_builder<T>>>() {
                                 sa.update(|builder| builder.#builder_field_name.push(self.0));
                              }
                         }
@@ -1737,7 +1737,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
                         // we dont really need _el
                         
 
-                         if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                         if let Ok(sa) = illicit::get::<StateAccess<#view_builder<T>>>() {
                             sa.update(|builder| builder.#builder_field_name.push(self.0));
                          }
                     }
@@ -1770,7 +1770,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
                         // we dont really need _el
                         
 
-                         if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                         if let Ok(sa) = illicit::get::<StateAccess<#view_builder<T>>>() {
                             sa.update(|builder| builder.#builder_field_name = Some(self.0));
                          }
                     }
@@ -1801,7 +1801,7 @@ pub fn view_macro(_args: TokenStream, input: TokenStream) -> TokenStream {
                         // we dont really need _el
                         
 
-                         if let Some(sa) = illicit::Env::get::<StateAccess<#view_builder<T>>>() {
+                         if let Ok(sa) = illicit::get::<StateAccess<#view_builder<T>>>() {
                             sa.update(|builder| builder.#builder_field_name = Some(self.0));
                          }
                     }
@@ -2081,7 +2081,7 @@ pub fn process_part(input: TokenStream) -> TokenStream {
     
                     let sa_builder = use_state(||backedup_builder);
                     
-                    illicit::child_env!(StateAccess<#view_builder<_>> => sa_builder).enter(|| {
+                    illicit::Layer::offer(sa_builder).enter(|| {
                         
                     match &mut root_backup {
                         seed::virtual_dom::Node::Element(ref mut ela) => {
