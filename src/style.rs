@@ -13,7 +13,6 @@ use wasm_bindgen::JsCast;
 pub mod css_values;
 pub use css_values::*;
 
-
 pub mod row_col_layout;
 pub use row_col_layout::*;
 
@@ -38,13 +37,12 @@ mod from_traits;
 use std::collections::HashMap;
 
 pub fn s() -> Style {
-
     Style::default()
 }
 
 thread_local! {
     pub static GLOBAL_STYLES_COUNT: Cell<u32> = Cell::new(0);
-    
+
     pub static STYLES_USED : RefCell<HashSet<u64>> = RefCell::new(HashSet::<u64>::new());
     pub static HASH_IDS_GENERATOR: RefCell<Harsh> = RefCell::new(HarshBuilder::new().init().unwrap());
 }
@@ -140,7 +138,7 @@ where
 struct ReturnBpScale;
 
 impl ActOnIteratorOfThemes<Option<Vec<CssMedia>>> for ReturnBpScale {
-    fn call<'a, It>(&self,  it: It) -> Option<Vec<CssMedia>>
+    fn call<'a, It>(&self, it: It) -> Option<Vec<CssMedia>>
     where
         It: DoubleEndedIterator<Item = &'a Theme>,
     {
@@ -732,11 +730,12 @@ impl<T> ActOnIteratorOfThemes<Option<Style>> for ReturnSpecificStyleFromStyleThe
 where
     T: StyleTheme + 'static,
 {
-    fn call<'a, It>(&self,  it: It) -> Option<Style>
+    fn call<'a, It>(&self, it: It) -> Option<Style>
     where
         It: DoubleEndedIterator<Item = &'a Theme>,
     {
-        it.rev().find_map(|theme| theme.get::<T, Style>(self.0.clone()))
+        it.rev()
+            .find_map(|theme| theme.get::<T, Style>(self.0.clone()))
     }
 }
 
@@ -748,11 +747,12 @@ impl<T> ActOnIteratorOfThemes<(u32, Option<u32>)> for ReturnBpTuple<T>
 where
     T: BreakpointTheme + 'static,
 {
-    fn call<'a, It>(&self,  it: It) -> (u32, Option<u32>)
+    fn call<'a, It>(&self, it: It) -> (u32, Option<u32>)
     where
         It: DoubleEndedIterator<Item = &'a Theme>,
     {
-        it.rev().find_map(|theme| theme.get::<T, (u32, Option<u32>)>(self.0.clone()))
+        it.rev()
+            .find_map(|theme| theme.get::<T, (u32, Option<u32>)>(self.0.clone()))
             .unwrap()
     }
 }
@@ -857,7 +857,7 @@ impl Pseudo {
             Pseudo::Target => ":target".to_string(),
             Pseudo::Valid => ":valid".to_string(),
             Pseudo::Visited => ":visited".to_string(),
-            Pseudo::Before  => "::before".to_string(),
+            Pseudo::Before => "::before".to_string(),
             Pseudo::After => "::after".to_string(),
             Pseudo::Lang(val) => format!(":lang({})", val),
             Pseudo::Not(val) => format!(":not({})", val),
@@ -1061,11 +1061,11 @@ fn add_global_init_css_to_head(
         };
 
     let rules_length = GLOBAL_STYLES_COUNT.with(|count| count.get());
-    
+
     // log!(full_css);
     let res = css_stylesheet.insert_rule_with_index(&full_css, rules_length);
     if let Err(err) = res {
-        log!("error inserting style: " ,err, full_css);
+        log!("error inserting style: ", err, full_css);
     }
 
     GLOBAL_STYLES_COUNT.with(|count| {
@@ -1088,7 +1088,7 @@ fn add_global_init_css_to_head(
         let rules_length = GLOBAL_STYLES_COUNT.with(|count| count.get());
         let res = css_stylesheet.insert_rule_with_index(&media_string, rules_length);
         if let Err(err) = res {
-            log!("error inserting style: " ,err, media_string);
+            log!("error inserting style: ", err, media_string);
         }
         GLOBAL_STYLES_COUNT.with(|count| {
             let mut c = count.get();
@@ -1108,7 +1108,7 @@ fn add_global_init_css_to_head(
             rules_length,
         );
         if let Err(err) = res {
-            log!("error inserting keyframes style: " ,err );
+            log!("error inserting keyframes style: ", err);
         }
         GLOBAL_STYLES_COUNT.with(|count| {
             let mut c = count.get();
@@ -1286,7 +1286,6 @@ pub trait LocalUpdateElForIterator<Ms> {
     fn update_el(self, el: &mut El<Ms>);
 }
 
-
 pub trait LocalUpdateEl<T> {
     fn update_el(self, el: &mut T);
 }
@@ -1294,35 +1293,42 @@ pub trait LocalUpdateEl<T> {
 impl<Ms> LocalUpdateEl<El<Ms>> for Style {
     fn update_el(self, el: &mut El<Ms>) {
         let rendered_css = self.render();
-        let existing_style_hashes = if let Some(AtValue::Some(class_string)) = el.attrs.vals.get(&At::Class) {
-            let existing_style_hashes = class_string.split(" ").filter_map(|cls|
-                if cls.starts_with("seedstyle-") {
+        let existing_style_hashes =
+            if let Some(AtValue::Some(class_string)) = el.attrs.vals.get(&At::Class) {
+                let existing_style_hashes = class_string
+                    .split(" ")
+                    .filter_map(|cls| {
+                        if cls.starts_with("seedstyle-") {
+                            let harsh_code = cls.split("-").last().unwrap();
 
-                    let harsh_code = cls.split("-").last().unwrap();
+                            let hash = HASH_IDS_GENERATOR.with(|builder_refcell| {
+                                builder_refcell.borrow().decode(harsh_code).unwrap()
+                            });
 
-                    let hash = HASH_IDS_GENERATOR.with(|builder_refcell| builder_refcell.borrow().decode(harsh_code).unwrap());
+                            let hash = &hash.first().unwrap();
+                            let existing_style =
+                                STYLES_USED.with(|css_set_ref| css_set_ref.borrow().contains(hash));
 
-                    let hash = &hash.first().unwrap();
-                    let existing_style = STYLES_USED
-                    .with(|css_set_ref| css_set_ref.borrow().contains(hash));
-
-                    if existing_style {
-                        Some(**hash)
-                    } else {
-                        None
-                    }
+                            if existing_style {
+                                Some(**hash)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<u64>>();
+                if !existing_style_hashes.is_empty() {
+                    Some(existing_style_hashes)
                 } else {
                     None
                 }
-            ).collect::<Vec<u64>>();
-            
-            Some(existing_style_hashes)
-        } else {
-            None
-        };
+            } else {
+                None
+            };
 
         if let Some(styles_in_elem) = existing_style_hashes {
-
             let mut s = DefaultHasher::new();
             (styles_in_elem, self.render()).hash(&mut s);
             let revised_variant_hash = s.finish();
@@ -1331,14 +1337,12 @@ impl<Ms> LocalUpdateEl<El<Ms>> for Style {
                 .with(|css_set_ref| css_set_ref.borrow().contains(&revised_variant_hash));
 
             if !css_aleady_created {
-                
                 add_css_to_head_unchecked(&rendered_css, revised_variant_hash, &self, &self.name);
-            } 
+            }
             let short_hash = format!("{}-{}", &self.name, short_uniq_id(revised_variant_hash));
             let class_name = format!("seedstyle-{}", short_hash);
             C![class_name].update_el(el);
         } else {
-
             let variant_hash = hash_64(&rendered_css, &self.updated_at);
 
             let class_name = format!(
@@ -1347,7 +1351,7 @@ impl<Ms> LocalUpdateEl<El<Ms>> for Style {
             );
 
             // sst- style added to raise specificity so has equal(and therefore more) specificity than global styles.
-            C!["sst-class",class_name].update_el(el);  
+            C!["sst-class", class_name].update_el(el);
         }
     }
 }
@@ -1378,7 +1382,7 @@ impl<Ms> LocalUpdateEl<El<Ms>> for &[Style] {
         let short_hash = format!("{}-{}", name, short_uniq_id(variant_hash));
         let class_name = format!("seedstyle-{}", short_hash);
 
-        C!["sst-class",class_name].update_el(el);
+        C!["sst-class", class_name].update_el(el);
     }
 }
 
@@ -1418,7 +1422,12 @@ fn add_css_to_head_unchecked(css: &str, variant_hash: u64, style: &Style, name: 
         .iter()
         .map(|c| {
             if let Combinator::Pre(c) = c {
-                format!(".sst-class.seedstyle-{}{}{}", short_hash, c, style.pseudo.render())
+                format!(
+                    ".sst-class.seedstyle-{}{}{}",
+                    short_hash,
+                    c,
+                    style.pseudo.render()
+                )
             } else {
                 String::new()
             }
@@ -1519,7 +1528,7 @@ fn add_css_to_head_unchecked(css: &str, variant_hash: u64, style: &Style, name: 
     // log!(full_css);
     let res = css_stylesheet.insert_rule_with_index(&full_css, rules_length);
     if let Err(err) = res {
-        log!("error inserting style: " ,err, full_css);
+        log!("error inserting style: ", err, full_css);
     }
 
     for (media_breakpoint, rule_vec) in &style.media_rules {
@@ -1537,7 +1546,7 @@ fn add_css_to_head_unchecked(css: &str, variant_hash: u64, style: &Style, name: 
             // log!(media_string);
             let res = css_stylesheet.insert_rule_with_index(&media_string, rules_length);
             if let Err(err) = res {
-                log!("error inserting style: " ,err , media_string);
+                log!("error inserting style: ", err, media_string);
             }
         } else {
             let mut media_string = String::new();
@@ -1553,7 +1562,7 @@ fn add_css_to_head_unchecked(css: &str, variant_hash: u64, style: &Style, name: 
             // log!(media_string);
             let res = css_stylesheet.insert_rule_with_index(&media_string, rules_length);
             if let Err(err) = res {
-                log!("error inserting style: " ,err, media_string);
+                log!("error inserting style: ", err, media_string);
             }
         }
     }
@@ -1570,7 +1579,7 @@ fn add_css_to_head_unchecked(css: &str, variant_hash: u64, style: &Style, name: 
         );
 
         if let Err(err) = res {
-            log!("error inserting keyframes style: " ,err);
+            log!("error inserting keyframes style: ", err);
         }
     }
 
@@ -1585,15 +1594,12 @@ pub trait AddStyleToNode {
 
 impl<Ms> AddStyleToNode for Node<Ms> {
     fn style(&mut self, style: Style) {
-
-        //  when styling we interrupt the  usual assigning of style to 
+        //  when styling we interrupt the  usual assigning of style to
         // a node, therefore cannot guarantee still updating the same node
-        
+
         // really need to improve this
         // the best would be to have a hash of existing styles
         // toa actual style and then use this to update.
-
-     
 
         match self {
             seed::virtual_dom::Node::Element(ref mut elx) => style.update_el(elx),
@@ -1616,7 +1622,7 @@ impl GlobalStyle {
         if selector == "html" {
             panic!("Sorry for now , You can only set html style directly in css.")
         }
-        
+
         self.styles.push((selector.to_string(), style));
         self
     }
