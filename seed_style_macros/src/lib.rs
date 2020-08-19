@@ -1,4 +1,3 @@
-#![feature(track_caller)]
 extern crate darling;
 extern crate proc_macro;
 use self::proc_macro::TokenStream;
