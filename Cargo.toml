@@ -11,8 +11,8 @@ license = "Apache-2.0 OR MIT"
 
 [dependencies]
 harsh = "0.1.6"
-seed_style_macros = {git = "https://github.com/rebo/seed_style_preview"}
-# seed_style_macros = {path="./seed_style_macros"}
+# seed_style_macros = {git = "https://github.com/rebo/seed_style_preview"}
+ seed_style_macros = {path="./seed_style_macros"}
 # seed_style_macros = "0.1.4"
 wasm-bindgen = "^0.2.62"
 ordered-float = "1.0.2"
@@ -21,7 +21,7 @@ derive_more = "0.99.5"
 # This commit points to Seed 0.7.0 with important fixes.
 seed = { git = "https://github.com/seed-rs/seed", rev = "0a538f0" }
 # seed_hooks = "0.1.4"
-seed_hooks = { git = "https://github.com/rebo/seed_hooks"}
+seed_hooks = { git = "https://github.com/arn-the-long-beard/seed_hooks.git" , branch ="hot_fix/update_with_new_hooks"}
 # seed_hooks = {path = "../seed_hooks"}
 objekt-clonable = "0.2.2"
 eager = "0.1.0"

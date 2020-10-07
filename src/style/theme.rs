@@ -10,6 +10,8 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::marker::PhantomData;
+use seed_hooks::atom::Atom;
+
 pub trait BorderTheme: Eq + Hash + Clone {}
 pub trait BorderWidthTheme: Eq + Hash + Clone {}
 pub trait BorderStyleTheme: Eq + Hash + Clone {}
